@@ -1,0 +1,100 @@
+<form [formGroup]="registerForm" (ngSubmit)="registrarme()" class="w-100">
+  <div class="w-100 d-flex justify-content-center mb-3">
+    <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
+  </div>
+
+  <div class="mb-5 mt-3 border-bottom">
+    <h2 class="h3 text-center w-100 mb-4">Registrarme</h2>
+  </div>
+
+  <!-- Email -->
+  <div class="form-floating mb-3">
+    <input
+      type="email"
+      formControlName="email"
+      class="form-control"
+      id="emailInput"
+      placeholder="name@example.com"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && registerForm.get('email')?.touched && registerForm.get('email')?.errors,
+        'is-valid': mostrarErrores && registerForm.get('email')?.touched && !registerForm.get('email')?.errors
+      }">
+    <label for="emailInput">Correo electrónico</label>
+    @if (mostrarErrores && registerForm.get('email')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        @if (registerForm.get('email')?.hasError('required')) {
+          Campo obligatorio
+        } @else if (registerForm.get('email')?.hasError('invalidEmail')) {
+          Email debe tener formato: texto@texto.texto
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Password -->
+  <div class="form-floating mb-3">
+    <input
+      type="password"
+      formControlName="password"
+      class="form-control"
+      id="passwordInput"
+      placeholder="Password"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && registerForm.get('password')?.touched && registerForm.get('password')?.errors,
+        'is-valid': mostrarErrores && registerForm.get('password')?.touched && !registerForm.get('password')?.errors
+      }">
+    <label for="passwordInput">Contraseña</label>
+      @if (mostrarErrores && registerForm.get('password')?.errors) {
+        <div class="form-text text-danger small mt-1">
+          @if (registerForm.get('password')?.hasError('required')) {
+            Campo obligatorio
+          } @else if (registerForm.get('password')?.hasError('minlength')) {
+            Mínimo 6 caracteres
+          } @else if (registerForm.get('password')?.hasError('invalidPassword')) {
+            Debe contener mayúscula, minúscula y número
+          }
+        </div>
+      }
+  </div>
+
+  <!-- Password repeat -->
+  <div class="form-floating mb-4">
+    <input
+      type="password"
+      formControlName="passwordRepeat"
+      class="form-control"
+      id="passwordRepeatInput"
+      placeholder="Repeat Password"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && registerForm.get('passwordRepeat')?.touched && registerForm.get('passwordRepeat')?.errors,
+        'is-valid': mostrarErrores && registerForm.get('passwordRepeat')?.touched && !registerForm.get('passwordRepeat')?.errors
+      }">
+    <label for="passwordRepeatInput">Repetir contraseña</label>
+    @if (mostrarErrores && registerForm.get('passwordRepeat')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        @if (registerForm.get('passwordRepeat')?.hasError('required')) {
+          Campo obligatorio
+        } @else if (registerForm.get('passwordRepeat')?.hasError('minlength')) {
+          Mínimo 6 caracteres
+        } @else if (registerForm.get('passwordRepeat')?.hasError('invalidPassword')) {
+          Debe contener mayúscula, minúscula y número
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Submit button -->
+  <div class="text-center mt-4">
+    <button
+      type="submit"
+      class="btn btn-dark w-100 d-block btn-primary-hover"
+      [disabled]="cargando">
+      @if (cargando) {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Registrando...
+      } @else {
+        Registrarme
+      }
+    </button>
+  </div>
+</form>

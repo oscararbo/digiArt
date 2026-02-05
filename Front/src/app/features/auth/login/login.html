@@ -1,0 +1,74 @@
+<form [formGroup]="formLogin" (ngSubmit)="iniciarSesion()" class="w-100">
+  <div class="w-100 d-flex justify-content-center mb-3">
+    <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
+  </div>
+
+  <div class="mb-5 mt-3 border-bottom">
+    <h2 class="h3 text-center w-100 mb-4">Iniciar sesión</h2>
+  </div>
+
+  <!-- Email input -->
+  <div class="form-floating mb-3">
+    <input
+      type="email"
+      formControlName="email"
+      class="form-control"
+      id="emailInput"
+      placeholder="name@example.com"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && formLogin.get('email')?.touched && formLogin.get('email')?.errors,
+        'is-valid': mostrarErrores && formLogin.get('email')?.touched && !formLogin.get('email')?.errors
+      }">
+    <label for="emailInput">Correo electrónico</label>
+    @if (mostrarErrores && formLogin.get('email')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        @if (formLogin.get('email')?.hasError('required')) {
+          Campo obligatorio
+        } @else if (formLogin.get('email')?.hasError('invalidEmail')) {
+          Email debe tener formato: texto@texto.texto
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Password input -->
+  <div class="form-floating mb-4">
+    <input
+      type="password"
+      formControlName="password"
+      class="form-control"
+      id="passwordInput"
+      placeholder="Password"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && formLogin.get('password')?.touched && formLogin.get('password')?.errors,
+        'is-valid': mostrarErrores && formLogin.get('password')?.touched && !formLogin.get('password')?.errors
+      }">
+    <label for="passwordInput">Contraseña</label>
+    @if (mostrarErrores && formLogin.get('password')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        @if (formLogin.get('password')?.hasError('required')) {
+          Campo obligatorio
+        } @else if (formLogin.get('password')?.hasError('minlength')) {
+          Mínimo 6 caracteres
+        } @else if (formLogin.get('password')?.hasError('invalidPassword')) {
+          Debe contener mayúscula, minúscula y número
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Submit button -->
+  <div class="text-center mt-4">
+    <button
+      class="btn btn-dark w-100 d-block btn-primary-hover"
+      type="submit"
+      [disabled]="cargando">
+      @if (cargando) {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Cargando...
+      } @else {
+        Entrar
+      }
+    </button>
+  </div>
+</form>

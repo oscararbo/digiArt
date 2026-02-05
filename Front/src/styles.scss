@@ -1,0 +1,56 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Importing Bootstrap SCSS file. */
+@import 'bootstrap/scss/bootstrap';
+
+/* Variables y gradiente primary */
+:root {
+    --primary-gradient: linear-gradient(90deg,
+            #FF2D55 0%,
+            #FF9500 15%,
+            #FFCC00 30%,
+            #34C759 50%,
+            #00AEEF 65%,
+            #007AFF 80%,
+            #AF52DE 100%);
+}
+
+/* Fondo completo con el gradiente */
+.bg-primary {
+    background: var(--primary-gradient);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Fondo con ajuste para elementos que necesiten cover/center */
+.bg-primary--cover {
+    background: var(--primary-gradient);
+    background-size: cover;
+    background-position: center;
+}
+
+/* Texto con gradiente (usa color transparente + background-clip) */
+.text-primary-gradient {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Ejemplo de utilidad para bordes con gradiente (si se necesita) */
+.border-primary {
+    border: 2px solid transparent;
+    border-image: var(--primary-gradient) 1;
+}
+
+/* Hover gradient utility for Entrar button */
+.btn-primary-hover {
+    transition: background .3s ease, color .3s ease, border-color .3s ease;
+}
+.btn-primary-hover:hover {
+    background: var(--primary-gradient) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    background-size: cover;
+}
