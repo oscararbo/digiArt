@@ -1,0 +1,29 @@
+{
+	"quoteProps": "preserve",
+	"printWidth": 200,
+	"useTabs": true,
+	"tabWidth": 4,
+	"overrides": [
+		{
+			"files": "*.md",
+			"options": {
+				"useTabs": true,
+				"tabWidth": 1
+			}
+		},
+		{
+			"files": "*.yml",
+			"options": {
+				"useTabs": true,
+				"tabWidth": 2
+			}
+		},
+		{
+			"files": "*.yaml",
+			"options": {
+				"useTabs": true,
+				"tabWidth": 2
+			}
+		}
+	]
+}

@@ -4,12 +4,13 @@ from Users.models import CustomUser
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, allow_blank=False, allow_null=False, max_length=100)
+    username = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=50)
     password = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6, write_only=True)
     password_repeat = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6, write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'password', 'password_repeat')
+        fields = ('email', 'username', 'password', 'password_repeat')
 
     def validate_email(self, email):
         if "@" not in email:
@@ -19,6 +20,18 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Este email ya está registrado")
         
         return email
+
+    def validate_username(self, username):
+        if len(username) < 3:
+            raise serializers.ValidationError("El nombre de usuario debe tener al menos 3 caracteres")
+        
+        if not username.replace('_', '').replace('-', '').isalnum():
+            raise serializers.ValidationError("El nombre de usuario solo puede contener letras, números, guiones y guiones bajos")
+        
+        if CustomUser.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Este nombre de usuario ya existe. Por favor elige otro")
+        
+        return username
 
     def validate_password(self, password):
         if not any(n.isdigit() for n in password):

@@ -10,6 +10,7 @@ admin.site.index_title = "Panel de Administración"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('Users.urls')),
+    path('api/', include('Artworks.urls')),
 ]
 
 if settings.DEBUG:

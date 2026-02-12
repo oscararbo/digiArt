@@ -31,6 +31,43 @@
     }
   </div>
 
+  <!-- Username -->
+  <div class="form-floating mb-3">
+    <input
+      type="text"
+      formControlName="username"
+      class="form-control"
+      id="usernameInput"
+      placeholder="nombre_usuario"
+      (blur)="verificarUsername()"
+      [ngClass]="{
+        'is-invalid': mostrarErrores && registerForm.get('username')?.touched && (registerForm.get('username')?.errors || usernameDisponible === false),
+        'is-valid': mostrarErrores && registerForm.get('username')?.touched && !registerForm.get('username')?.errors && usernameDisponible === true
+      }">
+    <label for="usernameInput">Nombre de usuario</label>
+    @if (mostrarErrores && registerForm.get('username')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        @if (registerForm.get('username')?.hasError('required')) {
+          Campo obligatorio
+        } @else if (registerForm.get('username')?.hasError('minlength')) {
+          Mínimo 3 caracteres
+        } @else if (registerForm.get('username')?.hasError('maxlength')) {
+          Máximo 50 caracteres
+        }
+      </div>
+    }
+    @if (usernameDisponible === false && !registerForm.get('username')?.errors) {
+      <div class="form-text text-danger small mt-1">
+        Este nombre de usuario ya existe
+      </div>
+    }
+    @if (usernameDisponible === true && !registerForm.get('username')?.errors) {
+      <div class="form-text text-success small mt-1">
+        ✓ Nombre de usuario disponible
+      </div>
+    }
+  </div>
+
   <!-- Password -->
   <div class="form-floating mb-3">
     <input

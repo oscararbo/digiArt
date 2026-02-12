@@ -34,6 +34,7 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True, blank=False, null=False)
+    username = models.CharField(max_length=50, unique=True, blank=False, null=False)
     nombre = models.CharField(max_length=50, null=True, blank=True, default="")
     apellidos = models.CharField(max_length=50, null=True, blank=True, default="")
     is_active = models.BooleanField(default=True, verbose_name="¿Está activo?",
@@ -59,7 +60,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         full_name = f"{self.nombre} {self.apellidos}".strip()
         if not full_name:
             full_name = "Sin nombre"
-        return f"{full_name} ({self.email})"
+        return f"{self.username} - {full_name} ({self.email})"
 
     def get_full_name(self):
         return f"{self.nombre} {self.apellidos}".strip()

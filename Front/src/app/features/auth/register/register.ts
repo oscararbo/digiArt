@@ -14,21 +14,51 @@ export class Register {
   registerForm: FormGroup;
   cargando: boolean = false;
   mostrarErrores: boolean = false;
+  usernameDisponible: boolean | null = null;
+  verificandoUsername: boolean = false;
   cambiarForm = output<boolean>();
   fnToggleLoginHeader = output();
 
   constructor(private formBuilder: FormBuilder) {
     this.registerForm = this.formBuilder.group({
       email: ['', [Validators.required, emailValidator()]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
       passwordRepeat: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
     });
+  }
+
+  async verificarUsername() {
+    const username = this.registerForm.get('username')?.value?.trim();
+    
+    if (!username || username.length < 3) {
+      this.usernameDisponible = null;
+      return;
+    }
+
+    this.verificandoUsername = true;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/auth/check-username/?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+      this.usernameDisponible = data.disponible;
+    } catch (error) {
+      console.error('Error verificando username:', error);
+      this.usernameDisponible = null;
+    } finally {
+      this.verificandoUsername = false;
+    }
   }
 
   async registrarme() {
     this.mostrarErrores = true;
 
     if (this.registerForm.invalid) {
+      return;
+    }
+
+    if (this.usernameDisponible === false) {
+      alert('El nombre de usuario no está disponible');
       return;
     }
 
@@ -47,6 +77,7 @@ export class Register {
         },
         body: JSON.stringify({
           email: this.registerForm.value.email,
+          username: this.registerForm.value.username,
           password: this.registerForm.value.password,
           password_repeat: this.registerForm.value.passwordRepeat,
         }),
@@ -59,6 +90,7 @@ export class Register {
         const errors = data.errors || {};
         const errorMessage = 
           errors.email?.[0] || 
+          errors.username?.[0] ||
           errors.password?.[0] || 
           errors.password_repeat?.[0] || 
           data.error || 
@@ -68,6 +100,7 @@ export class Register {
       }
 
       console.log('Registro exitoso:', data);
+      alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
       // Cambiar a formulario de login
       this.cambiarForm.emit(true);
     } catch (error) {

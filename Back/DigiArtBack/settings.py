@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 
     # Aplicaciones propias
     'Users',
+    'Artworks',
 ]
 
 SIMPLE_JWT = {

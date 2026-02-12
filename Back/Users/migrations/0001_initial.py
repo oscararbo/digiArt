@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
                 ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
                 ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
                 ('email', models.EmailField(max_length=100, unique=True)),
+                ('username', models.CharField(max_length=50, unique=True)),
                 ('nombre', models.CharField(blank=True, default='', max_length=50, null=True)),
                 ('apellidos', models.CharField(blank=True, default='', max_length=50, null=True)),
                 ('is_active', models.BooleanField(default=True, help_text='Si está desactivado, el usuario no podrá acceder a su cuenta', verbose_name='¿Está activo?')),

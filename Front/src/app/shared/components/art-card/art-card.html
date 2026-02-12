@@ -1,0 +1,18 @@
+<div class="art-card" (click)="goToDetail()" role="button" tabindex="0">
+    <div class="art-image-wrap">
+        <img [src]="data?.imageUrl || 'assets/images/placeholder.png'" alt="{{data?.title || 'Artwork'}}">
+    </div>
+
+    <div class="art-body">
+        <div class="art-meta">
+            <div class="art-texts">
+                <div class="art-title" title="{{data?.title}}">{{ data?.title }}</div>
+                <div class="art-author" title="{{data?.author}}">{{ data?.author }}</div>
+            </div>
+
+            <button class="btn-like" (click)="toggleFavorite($event)" aria-label="favorite">
+                <i [class]="liked ? 'bi bi-heart-fill' : 'bi bi-heart'"></i>
+            </button>
+        </div>
+    </div>
+</div>

@@ -24,6 +24,7 @@ class LoginView(APIView):
                 'user': {
                     'id': user.id,
                     'email': user.email,
+                    'username': user.username,
                     'nombre': user.nombre,
                     'apellidos': user.apellidos,
                 }
