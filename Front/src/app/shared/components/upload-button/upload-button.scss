@@ -1,0 +1,125 @@
+:host {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 999;
+}
+
+.btn-upload-circular {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+
+    &:hover {
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        transform: scale(1.1);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    .icon {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+        font-size: 2rem;
+    }
+
+    .text {
+        position: absolute;
+        left: -80px;
+        top: 50%;
+        transform: translateY(-50%);
+        white-space: nowrap;
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: white;
+        display: block;
+    }
+
+    // Estado hovering
+    &.hovering {
+        width: 180px;
+        border-radius: 30px;
+        justify-content: flex-start;
+        padding-left: 20px;
+
+        .icon {
+            left: 20px;
+            opacity: 1;
+        }
+
+        .text {
+            left: 60px;
+            opacity: 1;
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 768px) {
+    :host {
+        bottom: 1rem;
+        right: 1rem;
+    }
+
+    .btn-upload-circular {
+        width: 50px;
+        height: 50px;
+
+        .icon {
+            font-size: 1.5rem;
+        }
+
+        &.hovering {
+            width: 160px;
+            padding-left: 15px;
+
+            .icon {
+                left: 15px;
+            }
+
+            .text {
+                left: 50px;
+                font-size: 0.85rem;
+            }
+        }
+    }
+}
+
+// Animación de entrada
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(100px) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+:host {
+    animation: slideIn 0.5s ease-out;
+}

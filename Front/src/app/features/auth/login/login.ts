@@ -1,22 +1,22 @@
-import { Component, output } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   imports: [ReactiveFormsModule, NgClass],
   templateUrl: './login.html',
-  styleUrl: './login.scss',
+  styleUrls: ['./login.scss'],
   standalone: true,
 })
 export class Login {
   formLogin: FormGroup;
   cargando: boolean = false;
   mostrarErrores: boolean = false;
-  fnToggleLoginHeader = output();
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder, private router: Router) {
     this.formLogin = this.formBuilder.group({
       email: ['', [Validators.required, emailValidator()]],
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
@@ -59,9 +59,8 @@ export class Login {
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      alert('¡Inicio de sesión exitoso!');
-      // TODO: Redirigir a home
-      // this.router.navigate(['/home']);
+      // Redirigir a home
+      this.router.navigate(['/home']);
     } catch (error) {
       console.error('Error en la solicitud:', error);
       alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');

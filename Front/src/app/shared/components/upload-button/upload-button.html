@@ -1,0 +1,11 @@
+<button 
+    class="btn-upload-circular"
+    [class.hovering]="isHovering"
+    (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()"
+    (click)="abrirModal()"
+    title="Subir obra de arte"
+    aria-label="Subir obra de arte">
+    <span class="icon">+</span>
+    <span class="text">Subir obra</span>
+</button>

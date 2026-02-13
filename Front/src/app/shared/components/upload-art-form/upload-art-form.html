@@ -2,7 +2,6 @@
 <div 
   class="modal fade" 
   [class.show]="mostrarModal" 
-  [attr.style]="mostrarModal ? 'display: block;' : 'display: none;'"
   tabindex="-1"
   role="dialog">
   <div class="modal-dialog modal-lg">
@@ -145,17 +144,6 @@
                 </div>
               }
             </div>
-
-            <!-- Preview de Imagen -->
-            @if (imagenPreview) {
-              <div class="mb-4">
-                <label class="form-label fw-bold">Vista Previa</label>
-                <div class="card">
-                  <img [src]="imagenPreview" class="card-img-top" alt="Preview" style="max-height: 300px; object-fit: cover;">
-                </div>
-              </div>
-            }
-
           </form>
       </div>
 

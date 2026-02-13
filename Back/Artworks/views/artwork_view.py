@@ -2,6 +2,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models import Count, Q
+from django.db import models
 
 from Artworks.models import Genre
 from Artworks.serializers import GenreSerializer
@@ -60,7 +64,7 @@ class ArtworkCreateView(APIView):
                     artwork.generos.set(generos)
                 
                 from Artworks.serializers import ArtworkSerializer
-                resultado = ArtworkSerializer(artwork)
+                resultado = ArtworkSerializer(artwork, context={'request': request})
                 
                 return Response({
                     'success': True,
@@ -107,7 +111,7 @@ class ArtworkListView(APIView):
                     'error': 'Usuario no encontrado'
                 }, status=status.HTTP_404_NOT_FOUND)
         
-        serializer = ArtworkSerializer(artworks, many=True)
+        serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
         
         return Response({
             'success': True,
@@ -132,7 +136,7 @@ class ArtworkDetailView(APIView):
             artwork.vistas += 1
             artwork.save(update_fields=['vistas'])
             
-            serializer = ArtworkSerializer(artwork)
+            serializer = ArtworkSerializer(artwork, context={'request': request})
             
             return Response({
                 'success': True,
@@ -177,3 +181,96 @@ class ArtworkDeleteView(APIView):
                 'success': False,
                 'error': 'Obra no encontrada'
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class FeaturedArtworksView(APIView):
+    """
+    GET: Obtener obras destacadas (más likes en los últimos 7 días)
+    Parámetro query:
+    - limit: cantidad de obras (default 10)
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        from Artworks.models import Artwork, Like
+        from Artworks.serializers import ArtworkSerializer
+        
+        limit = int(request.query_params.get('limit', 10))
+        
+        # Últimos 7 días
+        una_semana_atras = timezone.now() - timedelta(days=7)
+        
+        # Obtener obras con más likes en la última semana
+        artworks = Artwork.objects.annotate(
+            likes_semana=Count('user_likes', filter=Q(user_likes__fecha_creacion__gte=una_semana_atras))
+        ).order_by('-likes_semana', '-fecha_creacion')[:limit]
+        
+        serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
+        
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'artworks': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class RecentArtworksView(APIView):
+    """
+    GET: Obtener obras más recientes
+    Parámetro query:
+    - limit: cantidad de obras (default 10)
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        from Artworks.models import Artwork
+        from Artworks.serializers import ArtworkSerializer
+        
+        limit = int(request.query_params.get('limit', 10))
+        
+        artworks = Artwork.objects.all().order_by('-fecha_creacion')[:limit]
+        
+        serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
+        
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'artworks': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class ArtworksByGenreView(APIView):
+    """
+    GET: Obtener obras por género
+    Parámetro path:
+    - genre_id: ID del género
+    Parámetro query:
+    - limit: cantidad de obras (default 10)
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, genre_id):
+        from Artworks.models import Artwork
+        from Artworks.serializers import ArtworkSerializer
+        
+        limit = int(request.query_params.get('limit', 10))
+        
+        try:
+            genre = Genre.objects.get(id=genre_id)
+            artworks = Artwork.objects.filter(generos=genre).order_by('-fecha_creacion')[:limit]
+            
+            serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
+            
+            return Response({
+                'success': True,
+                'genre': genre.nombre,
+                'count': len(serializer.data),
+                'artworks': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Genre.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': 'Género no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+

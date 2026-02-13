@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UploadArtModalService } from '../../services/upload-art-modal.service';
+import { UploadModalService } from '../../services/upload-modal.service';
+import { Subscription } from 'rxjs';
 
 interface Genre {
     id: number;
@@ -25,7 +26,7 @@ interface User {
     styleUrl: './upload-art-form.scss',
     standalone: true,
 })
-export class UploadArtForm implements OnInit {
+export class UploadArtForm implements OnInit, OnDestroy {
     uploadForm: FormGroup;
     cargando: boolean = false;
     mostrarErrores: boolean = false;
@@ -42,8 +43,12 @@ export class UploadArtForm implements OnInit {
     
     extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
     tamanioMaximoMB = 10;
+    
+    private modalSubscription: Subscription | null = null;
+    private formBuilder = inject(FormBuilder);
+    private uploadModalService = inject(UploadModalService);
 
-    constructor(private formBuilder: FormBuilder, private modalService: UploadArtModalService) {
+    constructor() {
         this.uploadForm = this.formBuilder.group({
             titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
             descripcion: ['', [Validators.maxLength(500)]],
@@ -55,6 +60,24 @@ export class UploadArtForm implements OnInit {
     ngOnInit() {
         this.obtenerUsuario();
         this.cargarGeneros();
+        
+        // Suscribirse al observable del modal
+        this.modalSubscription = this.uploadModalService.modalAbierto.subscribe(
+            (abierto: boolean) => {
+                this.mostrarModal = abierto;
+                if (abierto) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        );
+    }
+
+    ngOnDestroy() {
+        if (this.modalSubscription) {
+            this.modalSubscription.unsubscribe();
+        }
     }
 
     obtenerUsuario() {
@@ -70,12 +93,19 @@ export class UploadArtForm implements OnInit {
             const data = await response.json();
             
             if (data.success) {
-                this.generosDisponibles = data.genres;
-                this.generosFiltrados = data.genres;
+                // Filtrar solo artes visuales
+                const generosVisuales = this.filtrarGenerosVisuales(data.genres);
+                this.generosDisponibles = generosVisuales;
+                this.generosFiltrados = generosVisuales;
             }
         } catch (error) {
             console.error('Error cargando géneros:', error);
         }
+    }
+
+    filtrarGenerosVisuales(generos: any[]): any[] {
+        const generosVisuales = ['Pintura', 'Fotografía', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
+        return generos.filter(genero => generosVisuales.includes(genero.nombre));
     }
 
     buscarGeneros(termino: string) {
@@ -112,18 +142,9 @@ export class UploadArtForm implements OnInit {
         return this.generosSeleccionados.some(g => g.id === generoId);
     }
 
-    abrirModal() {
-        this.mostrarModal = true;
-        this.mostrarErrores = false;
-        this.modalService.abrirModal();
-        document.body.style.overflow = 'hidden';
-    }
-
     cerrarModal() {
-        this.mostrarModal = false;
         this.mostrarErrores = false;
-        this.modalService.cerrarModal();
-        document.body.style.overflow = 'auto';
+        this.uploadModalService.cerrarModal();
     }
 
     onImagenSelected(event: any) {
@@ -145,13 +166,6 @@ export class UploadArtForm implements OnInit {
             this.uploadForm.get('imagen')?.setValue('');
             return;
         }
-
-        // Mostrar preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            this.imagenPreview = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
 
         this.uploadForm.get('imagen')?.setValue(file);
     }
@@ -214,7 +228,7 @@ export class UploadArtForm implements OnInit {
             this.generosSeleccionados = [];
             this.imagenPreview = null;
             this.mostrarErrores = false;
-            
+
             // Cerrar modal
             this.cerrarModal();
             

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from Artworks.models import Genre, Artwork
+from Artworks.models import Genre, Artwork, Like
 
 
 @admin.register(Genre)
@@ -29,3 +29,11 @@ class ArtworkAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(Like)
+class LikeAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'artwork', 'fecha_creacion')
+    list_filter = ('fecha_creacion',)
+    search_fields = ('usuario__username', 'artwork__titulo')
+    readonly_fields = ('fecha_creacion',)

@@ -1,59 +1,155 @@
-# LoginTemplate
+# DigiArt Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.13.
+Frontend Angular 20 para la plataforma de compartición de obras de arte digitales DigiArt. Interfaz moderna y responsiva con búsqueda avanzada, sistema de likes interactivo y carga de obras.
 
-## Development server
+## Características Implementadas
 
-To start a local development server, run:
+- ✅ Autenticación por email con login/registro
+- ✅ Validación de username en tiempo real
+- ✅ Página de inicio con secciones deslizables (destacadas, recientes, por género)
+- ✅ Modal expandible mostrando 30 obras en grid 3 columnas
+- ✅ Búsqueda avanzada con filtros por género
+- ✅ Ordenamiento por reciente/populares
+- ✅ Sistema de likes interactivo con contador actualizado
+- ✅ Botón flotante "+" animado para subir obras
+- ✅ Formulario de carga con validación de imagen
+- ✅ Selección de géneros (máx 3) con búsqueda
+- ✅ Previsualización de imagen antes de subir
+- ✅ Autenticación con JWT tokens en localStorage
+- ✅ Diseño responsivo con Bootstrap 5
+
+## Instalación y Setup
+
+### 1. Instalar dependencias
+
+```bash
+cd Front
+npm install
+```
+
+### 2. Ejecutar servidor de desarrollo
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+La aplicación estará disponible en `http://localhost:4200/`
 
-## Code scaffolding
+## Estructura del Proyecto
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+Front/
+├── src/
+│   ├── index.html
+│   ├── main.ts
+│   ├── styles.scss
+│   ├── app/
+│   │   ├── app.config.ts
+│   │   ├── app.routes.ts
+│   │   ├── app.ts
+│   │   ├── constants/
+│   │   ├── core/
+│   │   ├── features/
+│   │   │   └── home/
+│   │   │       ├── home.ts
+│   │   │       ├── home.html
+│   │   │       └── home.scss
+│   │   ├── layouts/
+│   │   └── shared/
+│   │       ├── components/
+│   │       │   ├── art-card/
+│   │       │   ├── upload-art-form/
+│   │       │   └── upload-button/
+│   │       └── services/
+│   │           └── upload-modal.service.ts
+│   └── assets/
+│       └── images/
+├── public/
+├── angular.json
+├── package.json
+└── tsconfig.json
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Componentes Principales
+
+### Home Component
+
+Página principal que muestra:
+- **Barra de búsqueda:** Búsqueda en tiempo real de obras
+- **Filtros de género:** Tags seleccionables para filtrar por categoría
+- **Opciones de ordenamiento:** Ordenar por reciente o populares
+- **Secciones deslizables:** Obras destacadas, recientes y por género
+- **Grid modal:** Al hacer clic en "Ver más", muestra 30 obras en grid 3 columnas
+- **Sistema de likes:** Junto a cada obra, botón para dar/quitar like con contador
+
+### Upload Button Component
+
+Botón circular flotante en esquina inferior derecha:
+- **Reposo:** Círculo de 60px con ícono "+"
+- **Al pasar el mouse:** Se expande hacia la izquierda con "Subir obra"
+- **Al hacer clic:** Abre modal de carga
+- **Animación:** Suave expansion con transición CSS
+
+### Upload Art Form Component
+
+Modal para cargar una nueva obra:
+- **Título:** 3-200 caracteres
+- **Descripción:** TextArea
+- **Géneros:** Búsqueda y selección (máx 3)
+- **Imagen:** Carga con previsualización
+- **Validación:** En cliente y servidor
+
+### Upload Modal Service
+
+Servicio de estado global para controlar visibilidad del modal usando RxJS BehaviorSubject.
+
+## Autenticación
+
+Usa JWT tokens almacenados en localStorage:
+- Token se envía en header `Authorization: Bearer {token}`
+- Incluye login y registro
+- Validación de email y username
+
+## Validaciones
+
+### Cliente
+- Email: formato válido
+- Username: alfanuméricos, guiones y guiones bajos
+- Contraseña: mínimo 6 caracteres con dígito
+- Imagen: validación de extensión y tamaño
+- Título: 3-200 caracteres
+- Géneros: máximo 3 seleccionables
+
+### Servidor
+Todas las validaciones se repiten en el backend.
+
+## Scripts npm
 
 ```bash
-ng generate --help
+npm start      # Ejecutar servidor de desarrollo
+npm run build  # Compilar para producción
+npm test       # Ejecutar tests unitarios
+npm run lint   # Ejecutar linter
 ```
 
-## Building
+## Configuración Angular
 
-To build the project run:
+- **Versión:** Angular 20.3.13
+- **Componentes:** Standalone
+- **Forms:** Reactive Forms
+- **HTTP:** Fetch API
+- **Estado:** RxJS Observables
+- **Estilos:** SCSS + Bootstrap 5
 
-```bash
-ng build
-```
+## Próximas Mejoras
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [ ] Página de detalle de obra con comentarios
+- [ ] Perfil de usuario con galería
+- [ ] Sistema de comentarios y respuestas
+- [ ] Sistema de seguimiento de artistas
+- [ ] Feed personalizado
+- [ ] Notificaciones en tiempo real
+- [ ] Compartir en redes sociales
+- [ ] Búsqueda full-text avanzada
+- [ ] Modo oscuro
+- [ ] Internacionalización (i18n)

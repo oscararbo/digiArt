@@ -12,5 +12,9 @@ export const routes: Routes = [
   {
     path: "upload",
     loadComponent: () => import("./shared/components/upload-art-form/upload-art-form").then(c => c.UploadArtForm),
+  },
+  {
+    path: "home",
+    loadComponent: () => import("./features/home/home").then(c => c.Home),
   }
 ];

@@ -6,7 +6,6 @@ TiendaFront/
 # Ignorar archivos y carpetas dentro de Back
 Back/venv/
 Back/GUIA_INSTALACION.md
-Back/readme.md
 
 # Ignorar carpetas dentro de Front
 Front/.idea/

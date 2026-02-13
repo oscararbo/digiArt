@@ -5,7 +5,10 @@ from django.conf import settings
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email=None, password=None, **extra_fields):
+    def create_user(self, email=None, username=None, password=None, **extra_fields):
+        if not username:
+            raise ValueError('El usuario debe de tener un nombre de usuario')
+        
         if not email:
             raise ValueError('El usuario debe de tener un correo válido')
         if "@" not in email:
@@ -26,15 +29,15 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email=None, password=None, **extra_fields):
+    def create_superuser(self, email=None, username=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, username, password, **extra_fields)
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True, blank=False, null=False)
-    username = models.CharField(max_length=50, unique=True, blank=False, null=False)
+    username = models.CharField(max_length=50, blank=True, null=True)
     nombre = models.CharField(max_length=50, null=True, blank=True, default="")
     apellidos = models.CharField(max_length=50, null=True, blank=True, default="")
     is_active = models.BooleanField(default=True, verbose_name="¿Está activo?",
@@ -48,7 +51,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
     class Meta:
         db_table = 'users'

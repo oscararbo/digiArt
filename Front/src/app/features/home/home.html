@@ -1,1 +1,194 @@
-<p>home works!</p>
+<div class="home-container">
+    <!-- Barra de búsqueda y filtros -->
+    <div class="search-section" [class.collapsed]="searchSectionCollapsed">
+        <!-- Botón Toggle -->
+        <button class="btn-toggle-search" (click)="toggleSearchSection()" title="Mostrar/Ocultar filtros">
+            <i class="bi" [class.bi-chevron-up]="!searchSectionCollapsed" [class.bi-chevron-down]="searchSectionCollapsed"></i>
+        </button>
+
+        <div class="search-container">
+            <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input 
+                    type="text" 
+                    [(ngModel)]="busquedaTermino" 
+                    placeholder="Buscar obras, artistas, géneros..."
+                    (keyup.enter)="realizarBusqueda()"
+                    class="search-input">
+                <button class="btn-search" (click)="realizarBusqueda()" [disabled]="cargandoBusqueda">
+                    @if (cargandoBusqueda) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                        Buscar
+                    }
+                </button>
+            </div>
+
+            <!-- Filtros (ocultos cuando está collapsed) -->
+            @if (!searchSectionCollapsed) {
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label class="filter-label">Filtrar por género:</label>
+                    <div class="genre-tags">
+                        <button 
+                            class="tag-filter" 
+                            [class.active]="generoSeleccionado === null"
+                            (click)="limpiarBusqueda()">
+                            Todos
+                        </button>
+                        @for (genero of todasGeneros; track genero.id) {
+                            <button 
+                                class="tag-filter" 
+                                [class.active]="generoSeleccionado === genero.id"
+                                (click)="cambiarGeneroFiltro(genero.id)">
+                                {{ genero.nombre }}
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Ordenar por:</label>
+                    <div class="order-buttons">
+                        <button 
+                            class="order-btn"
+                            [class.active]="ordenarPor === 'reciente'"
+                            (click)="cambiarOrden('reciente')">
+                            <i class="bi bi-clock"></i> Recientes
+                        </button>
+                        <button 
+                            class="order-btn"
+                            [class.active]="ordenarPor === 'populares'"
+                            (click)="cambiarOrden('populares')">
+                            <i class="bi bi-heart"></i> Populares
+                        </button>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Resultados de búsqueda -->
+    @if (mostrandoBusqueda) {
+        <div class="search-results-section">
+            <div class="results-container">
+                <div class="results-header">
+                    <h2>Resultados de búsqueda</h2>
+                    <button class="btn-clear-search" (click)="limpiarBusqueda()">
+                        <i class="bi bi-x-lg"></i> Limpiar búsqueda
+                    </button>
+                </div>
+
+                @if (resultadosBusqueda.length > 0) {
+                    <div class="results-grid">
+                        @for (obra of resultadosBusqueda; track obra.id) {
+                            <div class="result-item">
+                                <app-art-card 
+                                    [data]="{ 
+                                        id: obra.id, 
+                                        title: obra.titulo, 
+                                        author: obra.autor_username, 
+                                        imageUrl: obra.imageUrl 
+                                    }">
+                                </app-art-card>
+                                <div class="result-stats">
+                                    <span class="stat">
+                                        <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                    </span>
+                                    <button 
+                                        class="stat like-btn"
+                                        (click)="toggleLike(obra)"
+                                        [class.liked]="obra.likes > 0">
+                                        <i class="bi bi-heart"></i> {{ obra.likes }}
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                } @else {
+                    <div class="no-results">
+                        <i class="bi bi-search"></i>
+                        <p>No se encontraron obras</p>
+                    </div>
+                }
+            </div>
+        </div>
+    } @else {
+        <!-- Secciones de obras (vista normal) -->
+        <div class="sections-container">
+            @for (seccion of secciones; track seccion.titulo) {
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">{{ seccion.titulo }}</h2>
+                        <button class="btn-ver-mas" (click)="abrirModal(seccion)">
+                            Ver más <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filas deslizables con 10 cards -->
+                    <div class="artworks-scroll">
+                        @if (seccion.obras && seccion.obras.length > 0) {
+                            <div class="artworks-row">
+                                @for (obra of seccion.obras; track obra.id) {
+                                    <div class="artwork-card-wrapper">
+                                        <app-art-card [data]="{ 
+                                            id: obra.id, 
+                                            title: obra.titulo, 
+                                            author: obra.autor_username, 
+                                            imageUrl: obra.imageUrl 
+                                        }"></app-art-card>
+                                    </div>
+                                }
+                            </div>
+                        } @else {
+                            <div class="no-artworks">
+                                No hay obras disponibles
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Modal para Ver más -->
+        @if (modalActiva && modalSeccion) {
+            <div class="modal-overlay" (click)="cerrarModal()">
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                        <h2 class="modal-title">{{ modalSeccion.titulo }}</h2>
+                        <button class="btn-close-modal" (click)="cerrarModal()">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Grid de 3 columnas con 30 obras -->
+                    @if (obrasPaginadas && obrasPaginadas.length > 0) {
+                        <div class="modal-grid">
+                            @for (obra of obrasPaginadas; track obra.id) {
+                                <div class="grid-item">
+                                    <app-art-card [data]="{ 
+                                        id: obra.id, 
+                                        title: obra.titulo, 
+                                        author: obra.autor_username, 
+                                        imageUrl: obra.imageUrl 
+                                    }"></app-art-card>
+                                </div>
+                            }
+                        </div>
+                    } @else {
+                        <div class="no-artworks">
+                            No hay obras disponibles
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Botón flotante de upload -->
+    <app-upload-button></app-upload-button>
+
+    <!-- Modal de upload (siempre cargado) -->
+    <app-upload-art-form></app-upload-art-form>
+</div>

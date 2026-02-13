@@ -10,18 +10,27 @@ class ArtworkSerializer(serializers.ModelSerializer):
     )
     autor_username = serializers.CharField(source='autor.username', read_only=True)
     generos_nombres = serializers.SerializerMethodField()
+    imageUrl = serializers.SerializerMethodField()
     
     class Meta:
         model = Artwork
         fields = (
-            'id', 'titulo', 'descripcion', 'imagen', 
+            'id', 'titulo', 'descripcion', 'imagen', 'imageUrl',
             'generos', 'generos_nombres', 'autor_username',
             'vistas', 'likes', 'fecha_creacion'
         )
-        read_only_fields = ('id', 'vistas', 'likes', 'fecha_creacion', 'autor_username')
+        read_only_fields = ('id', 'vistas', 'likes', 'fecha_creacion', 'autor_username', 'imageUrl')
     
     def get_generos_nombres(self, obj):
         return [g.nombre for g in obj.generos.all()]
+    
+    def get_imageUrl(self, obj):
+        if obj.imagen:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.imagen.url)
+            return f'http://127.0.0.1:8000{obj.imagen.url}'
+        return None
     
     def validate_generos(self, generos):
         if len(generos) > 3:

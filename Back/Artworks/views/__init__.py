@@ -3,7 +3,15 @@ from .artwork_view import (
     ArtworkCreateView, 
     ArtworkListView, 
     ArtworkDetailView,
-    ArtworkDeleteView
+    ArtworkDeleteView,
+    FeaturedArtworksView,
+    RecentArtworksView,
+    ArtworksByGenreView
+)
+from .like_view import (
+    ToggleLikeView,
+    CheckLikeView,
+    GetArtworkLikesView
 )
 
 __all__ = [
@@ -11,5 +19,11 @@ __all__ = [
     'ArtworkCreateView',
     'ArtworkListView',
     'ArtworkDetailView',
-    'ArtworkDeleteView'
+    'ArtworkDeleteView',
+    'FeaturedArtworksView',
+    'RecentArtworksView',
+    'ArtworksByGenreView',
+    'ToggleLikeView',
+    'CheckLikeView',
+    'GetArtworkLikesView'
 ]
