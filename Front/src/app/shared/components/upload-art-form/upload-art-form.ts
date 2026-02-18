@@ -40,6 +40,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
     
     imagenPreview: string | null = null;
     usuarioActual: User | null = null;
+    selectedFile: File | null = null;
     
     extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
     tamanioMaximoMB = 10;
@@ -56,7 +57,12 @@ export class UploadArtForm implements OnInit, OnDestroy {
             buscarGenero: [''],
         });
     }
-
+    
+    /**
+     * On component initialization, fetch the current user and available genres from the backend. 
+     * It also subscribes to the upload modal state to show or hide the modal accordingly.
+     * @returns
+     */
     ngOnInit() {
         this.obtenerUsuario();
         this.cargarGeneros();
@@ -74,12 +80,20 @@ export class UploadArtForm implements OnInit, OnDestroy {
         );
     }
 
+    /**
+     * On component destruction, unsubscribe from the modal state observable to prevent memory leaks.
+     * @returns
+     */
     ngOnDestroy() {
         if (this.modalSubscription) {
             this.modalSubscription.unsubscribe();
         }
     }
 
+    /**
+     * Fetch the current user's information from localStorage. This is used to associate the uploaded artwork with the user.
+     * @returns
+     */
     obtenerUsuario() {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -87,6 +101,11 @@ export class UploadArtForm implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Fetch the list of available genres from the backend API. 
+     * It filters the genres to include only those related to visual arts and stores them in the component state for use in the genre selection dropdown.
+     * @returns
+     */
     async cargarGeneros() {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/genres/');
@@ -103,11 +122,22 @@ export class UploadArtForm implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Filter the list of genres to include only those that are relevant to visual arts.
+     * @param generos 
+     * @returns 
+     */
     filtrarGenerosVisuales(generos: any[]): any[] {
         const generosVisuales = ['Pintura', 'Fotografía', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
         return generos.filter(genero => generosVisuales.includes(genero.nombre));
     }
 
+    /**
+     * Filter the available genres based on the user's input in the genre search field. 
+     * It updates the list of filtered genres and controls the visibility of the genre dropdown.
+     * @param termino
+     * @returns
+     */
     buscarGeneros(termino: string) {
         termino = termino.trim().toLowerCase();
         
@@ -125,6 +155,11 @@ export class UploadArtForm implements OnInit, OnDestroy {
         this.buscandoGeneros = false;
     }
 
+    /**
+     * Handle the selection of a genre from the dropdown. 
+     * It adds the selected genre to the list of selected genres, clears the search field, and hides the dropdown.
+     * @returns
+     */
     seleccionarGenero(genero: Genre) {
         if (this.generosSeleccionados.length < 3 && !this.generosSeleccionados.find(g => g.id === genero.id)) {
             this.generosSeleccionados.push(genero);
@@ -134,47 +169,89 @@ export class UploadArtForm implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Remove a genre from the list of selected genres. 
+     * It updates the state to reflect the change and allows the user to select a different genre if desired.
+     * @param generoId
+     * @returns
+     */
     removerGenero(generoId: number) {
         this.generosSeleccionados = this.generosSeleccionados.filter(g => g.id !== generoId);
     }
 
+    /**
+     * Check if a genre is currently selected.
+     * This is used to prevent duplicate selections and to manage the state of the genre selection dropdown.
+     * @param generoId
+     * @returns
+     */
     isGeneroSeleccionado(generoId: number): boolean {
         return this.generosSeleccionados.some(g => g.id === generoId);
     }
 
+    /**
+     * Close the upload modal and reset the form state. 
+     * It also hides any error messages and resets the image preview and selected file.
+     * @returns
+     */
     cerrarModal() {
         this.mostrarErrores = false;
         this.uploadModalService.cerrarModal();
     }
 
+    /**
+     * Handle the selection of an image file for upload. 
+     * It validates the file's extension and size, generates a preview of the image, and updates the form state accordingly.
+     * @returns
+     */
     onImagenSelected(event: any) {
         const file = event.target.files[0];
         
         if (!file) return;
 
-        // Validar extensión
+        // Validate extension
         const ext = file.name.split('.').pop()?.toLowerCase();
         if (!ext || !this.extensionesPermitidas.includes(ext)) {
             alert(`Extensión no permitida. Usa: ${this.extensionesPermitidas.join(', ')}`);
-            this.uploadForm.get('imagen')?.setValue('');
             return;
         }
 
-        // Validar tamaño
+        // Validate size
         if (file.size > this.tamanioMaximoMB * 1024 * 1024) {
             alert(`La imagen no puede exceder ${this.tamanioMaximoMB}MB`);
-            this.uploadForm.get('imagen')?.setValue('');
             return;
         }
 
-        this.uploadForm.get('imagen')?.setValue(file);
+        // Save selected file
+        this.selectedFile = file;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.imagenPreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+        
+        // Mark the form control as touched to trigger validation messages if needed
+        this.uploadForm.get('imagen')?.markAsTouched();
+        this.uploadForm.get('imagen')?.updateValueAndValidity();
     }
 
+    /**
+     * Handle the submission of the upload form. 
+     * It performs client-side validation, constructs a FormData object with the form values and selected file, and sends it to the backend API to create a new artwork.
+     * It also manages the loading state and displays appropriate success or error messages based on the API response.
+     * @returns
+     */
     async subirObra() {
         this.mostrarErrores = true;
 
         if (this.uploadForm.invalid) {
             alert('Por favor completa los campos obligatorios');
+            return;
+        }
+
+        if (!this.selectedFile) {
+            alert('Selecciona una imagen');
             return;
         }
 
@@ -194,14 +271,20 @@ export class UploadArtForm implements OnInit, OnDestroy {
             const formData = new FormData();
             formData.append('titulo', this.uploadForm.get('titulo')?.value);
             formData.append('descripcion', this.uploadForm.get('descripcion')?.value || '');
-            formData.append('imagen', this.uploadForm.get('imagen')?.value);
+            formData.append('imagen', this.selectedFile);
             
-            // Agregar géneros
+            // Add selected genres as multiple entries in the FormData
             this.generosSeleccionados.forEach(g => {
                 formData.append('generos', g.id.toString());
             });
 
             const token = localStorage.getItem('access_token');
+
+            if (!token) {
+                alert('Token de autenticación no encontrado. Por favor, vuelve a iniciar sesión');
+                this.cargando = false;
+                return;
+            }
 
             const response = await fetch('http://127.0.0.1:8000/api/artworks/create/', {
                 method: 'POST',
@@ -215,7 +298,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
 
             if (!response.ok) {
                 console.error('Errores del servidor:', data);
-                const errorMsg = data.error || data.errors?.titulo?.[0] || 'Error desconocido';
+                const errorMsg = data.error || data.errors?.titulo?.[0] || `Error: ${response.status}`;
                 alert('Error: ' + errorMsg);
                 return;
             }
@@ -223,13 +306,14 @@ export class UploadArtForm implements OnInit, OnDestroy {
             console.log('Obra subida exitosamente:', data);
             alert('¡Obra subida exitosamente!');
             
-            // Limpiar formulario
+            // Clear form and reset state
             this.uploadForm.reset();
             this.generosSeleccionados = [];
             this.imagenPreview = null;
+            this.selectedFile = null;
             this.mostrarErrores = false;
 
-            // Cerrar modal
+            // Close modal after successful upload
             this.cerrarModal();
             
         } catch (error) {

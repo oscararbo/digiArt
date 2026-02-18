@@ -27,6 +27,11 @@ export class ArtCard {
     this.liked = !!this.data?.liked;
   }
 
+  /**
+   * Navigate to the detail page of the artwork when the card is clicked.
+   * This function is called when the user clicks on the art card, allowing them to view more details about the artwork on a separate page.
+   * @returns 
+   */
   goToDetail() {
     const id = this.data?.id;
     if (!id) return;
@@ -34,6 +39,11 @@ export class ArtCard {
     this.router.navigate(['/art-detail', id]);
   }
 
+  /** Handle the like/unlike action for the artwork.
+   * This function is called when the user clicks on the like button on the art card, allowing them to like or unlike the artwork and updating the like status accordingly.
+   * @param event 
+   * @returns 
+   */
   async toggleFavorite(event: Event) {
     event.stopPropagation();
     if (!this.userId) {

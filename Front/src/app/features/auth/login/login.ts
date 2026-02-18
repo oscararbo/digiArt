@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
@@ -11,18 +11,40 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.scss'],
   standalone: true,
 })
-export class Login {
+export class Login implements OnInit {
   formLogin: FormGroup;
   cargando: boolean = false;
   mostrarErrores: boolean = false;
+  private router = inject(Router);
+  private formBuilder = inject(FormBuilder);
 
-  constructor(private formBuilder: FormBuilder, private router: Router) {
+  constructor() {
     this.formLogin = this.formBuilder.group({
       email: ['', [Validators.required, emailValidator()]],
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
     });
   }
 
+  /**
+   * On component initialization, check if there are email and password values in the navigation state 
+   * (e.g., coming from the registration page) and pre-fill the login form with those values for a smoother user experience.
+   * @returns
+   */
+  ngOnInit() {
+    const state = (history as any).state;
+    if (state?.email && state?.password) {
+      this.formLogin.patchValue({
+        email: state.email,
+        password: state.password
+      });
+    }
+  }
+
+  /**
+   * Handle the login process by sending the form data to the backend API. 
+   * It also performs client-side validation before making the API call.
+   * @returns 
+   */
   async iniciarSesion() {
     this.mostrarErrores = true;
 
@@ -54,12 +76,11 @@ export class Login {
 
       console.log('Login exitoso:', data);
       
-      // Guardar tokens en localStorage
+      // Save tokens and user info in localStorage
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirigir a home
       this.router.navigate(['/home']);
     } catch (error) {
       console.error('Error en la solicitud:', error);

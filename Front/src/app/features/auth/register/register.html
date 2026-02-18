@@ -15,9 +15,10 @@
       class="form-control"
       id="emailInput"
       placeholder="name@example.com"
+      (input)="verificarEmail()"
       [ngClass]="{
-        'is-invalid': mostrarErrores && registerForm.get('email')?.touched && registerForm.get('email')?.errors,
-        'is-valid': mostrarErrores && registerForm.get('email')?.touched && !registerForm.get('email')?.errors
+        'is-invalid': mostrarErrores && registerForm.get('email')?.touched && (registerForm.get('email')?.errors || emailDisponible === false),
+        'is-valid': mostrarErrores && registerForm.get('email')?.touched && !registerForm.get('email')?.errors && emailDisponible === true
       }">
     <label for="emailInput">Correo electrónico</label>
     @if (mostrarErrores && registerForm.get('email')?.errors) {
@@ -27,6 +28,11 @@
         } @else if (registerForm.get('email')?.hasError('invalidEmail')) {
           Email debe tener formato: texto@texto.texto
         }
+      </div>
+    }
+    @if (emailDisponible === false && !registerForm.get('email')?.errors) {
+      <div class="form-text text-danger small mt-1 ml-2">
+        Este correo electrónico ya está en uso
       </div>
     }
   </div>
@@ -39,7 +45,7 @@
       class="form-control"
       id="usernameInput"
       placeholder="nombre_usuario"
-      (blur)="verificarUsername()"
+      (input)="verificarUsername()"
       [ngClass]="{
         'is-invalid': mostrarErrores && registerForm.get('username')?.touched && (registerForm.get('username')?.errors || usernameDisponible === false),
         'is-valid': mostrarErrores && registerForm.get('username')?.touched && !registerForm.get('username')?.errors && usernameDisponible === true
@@ -59,11 +65,6 @@
     @if (usernameDisponible === false && !registerForm.get('username')?.errors) {
       <div class="form-text text-danger small mt-1">
         Este nombre de usuario ya existe
-      </div>
-    }
-    @if (usernameDisponible === true && !registerForm.get('username')?.errors) {
-      <div class="form-text text-success small mt-1">
-        ✓ Nombre de usuario disponible
       </div>
     }
   </div>

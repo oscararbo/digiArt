@@ -39,10 +39,10 @@ export class Home implements OnInit {
     todasGeneros: any[] = [];
     usuarioActual: any = null;
     
-    // Estado de la sección de búsqueda
+    // State for search and filters
     searchSectionCollapsed: boolean = false;
     
-    // Búsqueda y filtros
+    // Search and filter state
     busquedaTermino: string = '';
     generoSeleccionado: number | null = null;
     ordenarPor: 'reciente' | 'populares' = 'reciente';
@@ -59,16 +59,22 @@ export class Home implements OnInit {
 
     constructor() {}
 
+    // On component initialization, load user data, genres, and sections to display on the home page.
     ngOnInit() {
         this.cargarDatos();
     }
 
+    // Load user data, genres, and sections for the home page.
     cargarDatos(){
         this.obtenerUsuario();
         this.cargarGeneros();
         this.cargarSecciones();
     }
-
+    /**
+     * Retrieve the current user's information from local storage and store it in the component's state.
+     * This function is called during component initialization to ensure that user data is available for features like liking artworks or displaying user-specific content.
+     * @returns
+     */
     obtenerUsuario() {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -76,12 +82,16 @@ export class Home implements OnInit {
         }
     }
 
+    /** 
+     * Load the list of art genres from the backend API and filter them to include only visual arts genres. This function is called during component initialization to populate the genre filter options and to load artworks by genre on the home page.
+     * @returns
+     */
     async cargarGeneros() {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/genres/');
             const data = await response.json();
             if (data.success) {
-                // Filtrar solo artes visuales
+                // Filter genres to include only visual arts genres for the home page and search filters
                 this.todasGeneros = this.filtrarGenerosVisuales(data.genres);
             }
         } catch (error) {
@@ -89,25 +99,36 @@ export class Home implements OnInit {
         }
     }
 
+    /**
+     * Filter the list of genres to include only those that are considered visual arts. 
+     * This is used to ensure that the home page and search filters only display relevant genres for the type of artworks featured on the platform.
+     * @param generos 
+     * @returns 
+     */
     filtrarGenerosVisuales(generos: any[]): any[] {
         const generosVisuales = ['Pintura', 'Fotografía', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
         return generos.filter(genero => generosVisuales.includes(genero.nombre));
     }
 
+    /**
+     * Load the different sections of artworks to be displayed on the home page, including featured artworks, recent artworks, and artworks by genre. 
+     * This function makes multiple API calls to retrieve the necessary data for each section and populates the component's state accordingly.
+     * @returns
+     */
     async cargarSecciones() {
-        // Obras destacadas
+        // Top 10 artworks
         const destacadas = await this.cargarObrasDestacadas();
         if (destacadas) {
             this.secciones.push(destacadas);
         }
 
-        // Obras recientes
+        // Recent artworks
         const recientes = await this.cargarObrasRecientes();
         if (recientes) {
             this.secciones.push(recientes);
         }
 
-        // Obras por género
+        // Artworks by genre (only for genres that have artworks)
         for (const genero of this.todasGeneros) {
             const obrasPorGenero = await this.cargarObrasPorGenero(genero.id, genero.nombre);
             if (obrasPorGenero) {
@@ -116,6 +137,11 @@ export class Home implements OnInit {
         }
     }
 
+    /**
+     * Load the top featured artworks from the backend API and return a HomeSection object to be displayed on the home page. 
+     * This function is called during the loading of home page sections to populate the "Obras Destacadas" section with relevant data.
+     * @returns 
+     */
     async cargarObrasDestacadas(): Promise<HomeSection | null> {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/artworks/featured/?limit=10');
@@ -136,6 +162,11 @@ export class Home implements OnInit {
         return null;
     }
 
+    /**
+     * Load the most recent artworks from the backend API and return a HomeSection object to be displayed on the home page. 
+     * This function is called during the loading of home page sections to populate the "Novedades" section with relevant data.
+     * @returns 
+     */
     async cargarObrasRecientes(): Promise<HomeSection | null> {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/artworks/recent/?limit=10');
@@ -156,6 +187,13 @@ export class Home implements OnInit {
         return null;
     }
 
+    /**
+     * Load artworks for a specific genre from the backend API and return a HomeSection object to be displayed on the home page. 
+     * This function is called during the loading of home page sections for each genre to populate sections like "Estilo: Pintura" with relevant data.
+     * @param genreId
+     * @param genreNombre
+     * @returns 
+     */
     async cargarObrasPorGenero(genreId: number, genreNombre: string): Promise<HomeSection | null> {
         try {
             const response = await fetch(`http://127.0.0.1:8000/api/artworks/genre/${genreId}/?limit=10`);
@@ -178,6 +216,12 @@ export class Home implements OnInit {
         return null;
     }
 
+    /**
+     * Map the raw artwork data from the backend API to the Artwork interface used in the component. 
+     * This function is used to ensure that the artwork data is in a consistent format for display and manipulation within the home page sections and modals.
+     * @param artworks
+     * @returns 
+     */
     mapearObras(artworks: any[]): Artwork[] {
         return artworks.map(artwork => ({
             id: artwork.id,
@@ -192,6 +236,12 @@ export class Home implements OnInit {
         }));
     }
 
+    /**
+     * Open a modal to display a paginated list of artworks for a specific section (featured, recent, or genre). 
+     * This function is called when the user clicks on the "Ver más" button for a section on the home page, allowing them to see more artworks related to that section.
+     * @param seccion
+     * @returns 
+     */
     async abrirModal(seccion: HomeSection) {
         this.modalSeccion = { ...seccion };
         this.pagina = 0;
@@ -224,14 +274,23 @@ export class Home implements OnInit {
         }
     }
 
+    /**
+     * Close the artwork modal and reset related state. This function is called when the user closes the modal after viewing more artworks in a section, ensuring that the component's state is cleared and ready for the next time the modal is opened.
+     * @returns 
+     */
     cerrarModal() {
         this.modalActiva = false;
         this.modalSeccion = null;
         this.obrasPaginadas = [];
-        // Recargar secciones para reflejar posibles cambios (ej. nuevo arte subido)
+        // Reload sections to update artworks data after closing modal (e.g., if user liked an artwork)
         this.cargarDatos();
     }
 
+    /**
+     * Perform a search for artworks based on the search term and selected genre filter. This function is called when the user submits a search query or changes the genre filter, allowing them to find artworks that match their criteria.
+     * It also handles sorting the search results by recent or popular.
+     * @returns 
+     */
     async realizarBusqueda() {
         if (this.busquedaTermino.trim() === '' && this.generoSeleccionado === null) {
             this.mostrandoBusqueda = false;
@@ -244,7 +303,7 @@ export class Home implements OnInit {
         try {
             let url = 'http://127.0.0.1:8000/api/artworks/';
             
-            // Aplicar filtros
+            // Aply genre filter if selected
             if (this.generoSeleccionado !== null && this.generoSeleccionado !== 0) {
                 url = `http://127.0.0.1:8000/api/artworks/genre/${this.generoSeleccionado}/?limit=100`;
             } else {
@@ -257,7 +316,7 @@ export class Home implements OnInit {
             if (data.success) {
                 let obras = this.mapearObras(data.artworks);
 
-                // Filtrar por término de búsqueda
+                // Filter by search term if provided
                 if (this.busquedaTermino.trim()) {
                     const termino = this.busquedaTermino.toLowerCase();
                     obras = obras.filter(obra => 
@@ -268,7 +327,7 @@ export class Home implements OnInit {
                     );
                 }
 
-                // Ordenar
+                // Order results
                 if (this.ordenarPor === 'populares') {
                     obras = obras.sort((a, b) => b.likes - a.likes);
                 } else {
@@ -284,6 +343,10 @@ export class Home implements OnInit {
         }
     }
 
+    /** Clear the search term, reset the genre filter, and hide the search results.
+     * This function is called when the user clicks on the "Limpiar búsqueda" button, allowing them to reset their search criteria and return to the default home page view.
+     * @returns 
+     */
     limpiarBusqueda() {
         this.busquedaTermino = '';
         this.generoSeleccionado = null;
@@ -291,11 +354,21 @@ export class Home implements OnInit {
         this.resultadosBusqueda = [];
     }
 
+    /**
+     * Change the selected genre filter for the search and trigger a new search with the updated filter.
+     * This function is called when the user selects a different genre from the dropdown, allowing them to refine their search results based on the chosen genre.
+     * @param generoId 
+     */
     cambiarGeneroFiltro(generoId: number) {
         this.generoSeleccionado = this.generoSeleccionado === generoId ? null : generoId;
         this.realizarBusqueda();
     }
 
+    /** 
+     * Change the sorting order for the search results and trigger a new search with the updated order.
+     * This function is called when the user selects a different sorting option (recent or popular) from the dropdown, allowing them to view their search results in the desired order.
+     * @param orden 
+     */
     cambiarOrden(orden: 'reciente' | 'populares') {
         this.ordenarPor = orden;
         if (this.mostrandoBusqueda) {
@@ -303,10 +376,12 @@ export class Home implements OnInit {
         }
     }
 
+    // Toggle the visibility of the search and filter section on the home page. This function is called when the user clicks on the "Buscar obras" button, allowing them to show or hide the search and filter options for a cleaner interface when not searching.
     toggleSearchSection() {
         this.searchSectionCollapsed = !this.searchSectionCollapsed;
     }
 
+    // Handle the like/unlike action for an artwork. This function is called when the user clicks on the like button for an artwork, allowing them to like or unlike the artwork and updating the like count accordingly.
     async toggleLike(obra: Artwork) {
         if (!this.usuarioActual) {
             alert('Debes iniciar sesión para dar likes');
@@ -333,10 +408,12 @@ export class Home implements OnInit {
         }
     }
 
+    // Pagination logic for the modal displaying artworks in a section. This function calculates the artworks to be displayed on the current page of the modal based on the total artworks and the defined number of artworks per page.
     get contarObrasPorFila(): number {
         return 3;
     }
 
+    // Calculate the artworks to be displayed on the current page of the modal based on pagination.
     get filasObrasModal(): number {
         return Math.ceil(this.obrasPaginadas.length / this.contarObrasPorFila);
     }
