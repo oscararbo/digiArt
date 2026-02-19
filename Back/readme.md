@@ -58,8 +58,7 @@ from Artworks.models import Genre
 genres = [
     'Pintura', 'Fotografía', 'Escultura', 'Ilustración',
     'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica',
-    'Danza', 'Música', 'Poesía', 'Literatura',
-    'Cine', 'Teatro', 'Arquitectura', 'Moda'
+    'Arquitectura'
 ]
 
 for genre_name in genres:

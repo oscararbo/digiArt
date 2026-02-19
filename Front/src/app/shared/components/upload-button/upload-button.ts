@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { UploadModalService } from '../../services/upload-modal.service';
+import { LoginPopupService } from '../../services/login-popup.service';
 
 @Component({
     selector: 'app-upload-button',
@@ -10,8 +11,15 @@ import { UploadModalService } from '../../services/upload-modal.service';
 export class UploadButton {
     isHovering: boolean = false;
     private uploadModalService = inject(UploadModalService);
+    private loginPopupService = inject(LoginPopupService);
 
     abrirModal() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            // abrir pop-up que pide login
+            this.loginPopupService.open();
+            return;
+        }
         this.uploadModalService.abrirModal();
     }
 

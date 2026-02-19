@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
 import { Router } from '@angular/router';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 
 @Component({
   selector: 'app-register',
@@ -22,6 +23,7 @@ export class Register {
 
   private emailTimeout: any;
   private usernameTimeout: any;
+  private tokenRefreshService = inject(TokenRefreshService);
 
   constructor(private formBuilder: FormBuilder, private router: Router) {
     this.registerForm = this.formBuilder.group({
@@ -30,6 +32,14 @@ export class Register {
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
       passwordRepeat: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
     });
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const enc = new TextEncoder();
+    const data = enc.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   /**
@@ -136,6 +146,7 @@ export class Register {
     this.cargando = true;
 
     try {
+      const hashed = await this.hashPassword(this.registerForm.value.password);
       const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
         method: 'POST',
         headers: {
@@ -144,8 +155,8 @@ export class Register {
         body: JSON.stringify({
           email: this.registerForm.value.email,
           username: this.registerForm.value.username,
-          password: this.registerForm.value.password,
-          password_repeat: this.registerForm.value.passwordRepeat,
+          password: hashed,
+          password_repeat: hashed,
         }),
       });
 
@@ -166,6 +177,7 @@ export class Register {
       }
 
       // Login after successful registration
+      // After registration, log in using the same original credentials (iniciarSesion hashes them again)
       await this.iniciarSesion(this.registerForm.value.email, this.registerForm.value.password);
     } catch (error) {
       console.error('Error en la solicitud:', error);
@@ -182,6 +194,7 @@ export class Register {
    */
   private async iniciarSesion(email: string, password: string) {
     try {
+      const hashed = await this.hashPassword(password);
       const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
         method: 'POST',
         headers: {
@@ -189,7 +202,7 @@ export class Register {
         },
         body: JSON.stringify({
           email: email,
-          password: password,
+          password: hashed,
         }),
       });
 
@@ -207,6 +220,9 @@ export class Register {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Iniciar renovación automática del token
+      this.tokenRefreshService.startAutoRefresh();
 
       // Navigate to home page after successful login
       this.router.navigate(['/home']);

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
 import { Router } from '@angular/router';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 
 @Component({
   selector: 'app-login',
@@ -17,12 +18,21 @@ export class Login implements OnInit {
   mostrarErrores: boolean = false;
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
+  private tokenRefreshService = inject(TokenRefreshService);
 
   constructor() {
     this.formLogin = this.formBuilder.group({
       email: ['', [Validators.required, emailValidator()]],
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
     });
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const enc = new TextEncoder();
+    const data = enc.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   /**
@@ -55,6 +65,7 @@ export class Login implements OnInit {
     this.cargando = true;
 
     try {
+      const hashed = await this.hashPassword(this.formLogin.value.password);
       const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
         method: 'POST',
         headers: {
@@ -62,7 +73,7 @@ export class Login implements OnInit {
         },
         body: JSON.stringify({
           email: this.formLogin.value.email,
-          password: this.formLogin.value.password,
+          password: hashed,
         }),
       });
 
@@ -80,6 +91,9 @@ export class Login implements OnInit {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Iniciar renovación automática del token
+      this.tokenRefreshService.startAutoRefresh();
       
       this.router.navigate(['/home']);
     } catch (error) {

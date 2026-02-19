@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UploadModalService } from '../../services/upload-modal.service';
+import { LoginPopupService } from '../../services/login-popup.service';
+import { genresSignal, artworksSignal } from '../../../features/home/home';
 import { Subscription } from 'rxjs';
 
 interface Genre {
@@ -48,6 +50,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
     private modalSubscription: Subscription | null = null;
     private formBuilder = inject(FormBuilder);
     private uploadModalService = inject(UploadModalService);
+    private loginPopupService = inject(LoginPopupService);
 
     constructor() {
         this.uploadForm = this.formBuilder.group({
@@ -116,6 +119,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
                 const generosVisuales = this.filtrarGenerosVisuales(data.genres);
                 this.generosDisponibles = generosVisuales;
                 this.generosFiltrados = generosVisuales;
+                // Update shared signal
+                genresSignal.set(generosVisuales);
             }
         } catch (error) {
             console.error('Error cargando géneros:', error);
@@ -281,7 +286,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
             const token = localStorage.getItem('access_token');
 
             if (!token) {
-                alert('Token de autenticación no encontrado. Por favor, vuelve a iniciar sesión');
+                // Open login pop-up if user is not authenticated
+                this.loginPopupService.open();
                 this.cargando = false;
                 return;
             }
@@ -302,10 +308,15 @@ export class UploadArtForm implements OnInit, OnDestroy {
                 alert('Error: ' + errorMsg);
                 return;
             }
-
-            console.log('Obra subida exitosamente:', data);
-            alert('¡Obra subida exitosamente!');
             
+            // If the upload is successful, add the new artwork to the shared signal so that it appears in the home page without needing to refresh.
+            try {
+                const created = data.artwork ?? data;
+                if (created) {
+                    artworksSignal.update(list => [created, ...list]);
+                }
+            } catch (e) {}
+
             // Clear form and reset state
             this.uploadForm.reset();
             this.generosSeleccionados = [];

@@ -1,9 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArtCard } from '../../shared/components/art-card/art-card';
 import { UploadButton } from '../../shared/components/upload-button/upload-button';
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
+import { LoginPopupService } from '../../shared/services/login-popup.service';
+
+// Simple shared signals for genres and artworks
+export const genresSignal = signal<any[]>([]);
+export const artworksSignal = signal<any[]>([]);
 
 interface Artwork {
     id: string;
@@ -35,8 +40,10 @@ interface HomeSection {
     imports: [CommonModule, ArtCard, UploadButton, UploadArtForm, FormsModule]
 })
 export class Home implements OnInit {
-    secciones: HomeSection[] = [];
-    todasGeneros: any[] = [];
+    private loginPopupService = inject(LoginPopupService);
+    
+    secciones = signal<HomeSection[]>([]);
+    todasGeneros = signal<any[]>([]);
     usuarioActual: any = null;
     
     // State for search and filters
@@ -57,7 +64,58 @@ export class Home implements OnInit {
     pagina: number = 0;
     obrasPorPagina: number = 30;
 
-    constructor() {}
+    constructor() {
+        // Efects to react to global state changes in genres and artworks, ensuring that the home page updates accordingly when there are changes in these global states.
+        effect(() => {
+            const g = genresSignal();
+            if (g) {
+                this.todasGeneros.set(g);
+            }
+        });
+
+        effect(() => {
+            const a = artworksSignal();
+            // If there's a newly added artwork signal, try to insert it locally into relevant sections
+            if (a && a.length > 0) {
+                const latestRaw = a[0];
+                try {
+                    const mapped = this.mapearObras([latestRaw])[0];
+                    
+                    // Use update() to ensure proper reactivity and create new references
+                    this.secciones.update(currentSecciones => {
+                        // Create a new array with updated sections to trigger Angular change detection
+                        return currentSecciones.map(sec => {
+                            if (sec.tipo === 'recientes') {
+                                // Check if artwork already exists
+                                if (!sec.obras.find(o => o.id === mapped.id)) {
+                                    return {
+                                        ...sec,
+                                        obras: [mapped, ...sec.obras]
+                                    };
+                                }
+                                return sec;
+                            }
+                            
+                            if (sec.tipo === 'genero' && mapped.generos_nombres && sec.genreNombre && mapped.generos_nombres.includes(sec.genreNombre)) {
+                                // Check if artwork already exists
+                                if (!sec.obras.find(o => o.id === mapped.id)) {
+                                    return {
+                                        ...sec,
+                                        obras: [mapped, ...sec.obras]
+                                    };
+                                }
+                            }
+                            
+                            return sec;
+                        });
+                    });
+                } catch (err) {
+                    // If mapping fails, we can ignore and rely on manual refresh
+                    console.error('Error inserting artwork:', err);
+                }
+            }
+        });
+    }
 
     // On component initialization, load user data, genres, and sections to display on the home page.
     ngOnInit() {
@@ -92,7 +150,8 @@ export class Home implements OnInit {
             const data = await response.json();
             if (data.success) {
                 // Filter genres to include only visual arts genres for the home page and search filters
-                this.todasGeneros = this.filtrarGenerosVisuales(data.genres);
+                const filtrados = this.filtrarGenerosVisuales(data.genres);
+                this.todasGeneros.set(filtrados);
             }
         } catch (error) {
             console.error('Error cargando géneros:', error);
@@ -116,25 +175,31 @@ export class Home implements OnInit {
      * @returns
      */
     async cargarSecciones() {
+        // Reset sections before loading to avoid duplicates when reloading
+        const nuevasSecciones: HomeSection[] = [];
+
         // Top 10 artworks
         const destacadas = await this.cargarObrasDestacadas();
         if (destacadas) {
-            this.secciones.push(destacadas);
+            nuevasSecciones.push(destacadas);
         }
 
         // Recent artworks
         const recientes = await this.cargarObrasRecientes();
         if (recientes) {
-            this.secciones.push(recientes);
+            nuevasSecciones.push(recientes);
         }
 
         // Artworks by genre (only for genres that have artworks)
-        for (const genero of this.todasGeneros) {
+        for (const genero of this.todasGeneros()) {
             const obrasPorGenero = await this.cargarObrasPorGenero(genero.id, genero.nombre);
             if (obrasPorGenero) {
-                this.secciones.push(obrasPorGenero);
+                nuevasSecciones.push(obrasPorGenero);
             }
         }
+
+        // Update signal with all new sections
+        this.secciones.set(nuevasSecciones);
     }
 
     /**
@@ -383,13 +448,15 @@ export class Home implements OnInit {
 
     // Handle the like/unlike action for an artwork. This function is called when the user clicks on the like button for an artwork, allowing them to like or unlike the artwork and updating the like count accordingly.
     async toggleLike(obra: Artwork) {
-        if (!this.usuarioActual) {
-            alert('Debes iniciar sesión para dar likes');
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            // Show login pop-up if user is not authenticated
+            this.loginPopupService.open();
             return;
         }
 
         try {
-            const token = localStorage.getItem('access_token');
             const response = await fetch(`http://127.0.0.1:8000/api/artworks/${obra.id}/like/`, {
                 method: 'POST',
                 headers: {
