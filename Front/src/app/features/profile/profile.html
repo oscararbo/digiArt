@@ -1,0 +1,191 @@
+<div class="profile-container" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <!-- Sidebar: User Profile Info (33% or collapsed) -->
+    <aside class="profile-sidebar" [class.collapsed]="sidebarCollapsed()">
+        <div class="sidebar-content">
+            <!-- Profile Picture -->
+            <div class="profile-avatar">
+                <img *ngIf="userProfile()?.imagen_perfil" 
+                     [src]="userProfile()?.imagen_perfil" 
+                     [alt]="userProfile()?.username"
+                     class="avatar-image">
+                <i *ngIf="!userProfile()?.imagen_perfil" class="bi bi-person-circle"></i>
+            </div>
+
+            <!-- Username and Description -->
+            <div class="profile-info">
+                <h2 class="profile-username">{{ userProfile()?.username }}</h2>
+                <p class="profile-description" *ngIf="!isEditingProfile()">
+                    {{ userProfile()?.descripcion || 'Sin descripción' }}
+                </p>
+            </div>
+
+            <!-- Edit Button/Form (only for current user) -->
+            <div *ngIf="isCurrentUser()" class="profile-actions">
+                <button *ngIf="!isEditingProfile()" 
+                        class="btn btn-edit-profile"
+                        (click)="startEditingProfile()">
+                    <i class="bi bi-pencil"></i> Editar perfil
+                </button>
+
+                <!-- Edit Form -->
+                <div *ngIf="isEditingProfile()" class="edit-form">
+                    <div class="form-group">
+                        <label>Nombre de usuario</label>
+                        <input 
+                            type="text" 
+                            [(ngModel)]="editingUsername"
+                            (blur)="checkUsername()"
+                            class="form-control"
+                            [class.is-invalid]="usernameExists()">
+                        <small *ngIf="usernameExists()" class="text-danger">
+                            Este nombre de usuario ya existe
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea 
+                            [(ngModel)]="editingDescription"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Cuéntanos sobre ti..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-save" 
+                                (click)="saveProfileChanges()"
+                                [disabled]="usernameExists() || editingUsername().trim().length === 0">
+                            Guardar
+                        </button>
+                        <button class="btn btn-cancel" (click)="cancelEditingProfile()">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapse Button -->
+        <button class="btn-collapse-sidebar" 
+                (click)="toggleSidebarCollapsed()"
+                title="Colapsar/Expandir" 
+                [class.collapsed]="sidebarCollapsed()">
+            <i class="bi" [class.bi-chevron-left]="!sidebarCollapsed()" [class.bi-chevron-right]="sidebarCollapsed()"></i>
+        </button>
+    </aside>
+
+    <!-- Main Content: Artworks (67% or 100% if sidebar collapsed) -->
+    <main class="profile-main">
+        <!-- Favorites Section -->
+        <section class="artworks-section">
+            <div class="section-header">
+                <div class="section-title-wrapper">
+                    <h3 class="section-title" (click)="toggleFavorites()">
+                        <i class="bi bi-heart"></i> Obras Favoritas
+                    </h3>
+                    <button class="btn-toggle-section" (click)="toggleFavorites()" 
+                            [class.expanded]="favoritesExpanded()">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <input 
+                    *ngIf="favoritesExpanded()"
+                    type="text" 
+                    [(ngModel)]="favoritesSearchTerm"
+                    placeholder="Buscar por título, autor o género..."
+                    class="search-input">
+            </div>
+
+            <!-- Artworks Grid -->
+            <div *ngIf="favoritesExpanded()" class="artworks-grid">
+                <div *ngIf="filteredLikedArtworks.length > 0; else noFavorites">
+                    <div *ngFor="let row of likedArtworksRows" class="artworks-row">
+                        <div *ngFor="let obra of row" class="artwork-card-wrapper">
+                            <app-art-card [data]="{ 
+                                id: obra.id, 
+                                title: obra.titulo, 
+                                author: obra.autor_username, 
+                                imageUrl: obra.imageUrl,
+                                likes: obra.likes
+                            }"></app-art-card>
+                            <div class="artwork-stats">
+                                <span class="stat">
+                                    <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                </span>
+                                <span class="stat">
+                                    <i class="bi bi-heart"></i> {{ obra.likes }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <ng-template #noFavorites>
+                    <div class="no-artworks">
+                        <i class="bi bi-heart"></i>
+                        <p>No hay obras favoritas</p>
+                    </div>
+                </ng-template>
+            </div>
+        </section>
+
+        <!-- Personal Artworks Section -->
+        <section class="artworks-section">
+            <div class="section-header">
+                <div class="section-title-wrapper">
+                    <h3 class="section-title" (click)="togglePersonal()">
+                        <i class="bi bi-palette"></i> Obras Personales
+                    </h3>
+                    <button class="btn-toggle-section" (click)="togglePersonal()" 
+                            [class.expanded]="personalExpanded()">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <input 
+                    *ngIf="personalExpanded()"
+                    type="text" 
+                    [(ngModel)]="personalSearchTerm"
+                    placeholder="Buscar por título, autor o género..."
+                    class="search-input">
+            </div>
+
+            <!-- Artworks Grid -->
+            <div *ngIf="personalExpanded()" class="artworks-grid">
+                <div *ngIf="filteredPersonalArtworks.length > 0; else noPersonal">
+                    <div *ngFor="let row of personalArtworksRows" class="artworks-row">
+                        <div *ngFor="let obra of row" class="artwork-card-wrapper">
+                            <app-art-card [data]="{ 
+                                id: obra.id, 
+                                title: obra.titulo, 
+                                author: obra.autor_username, 
+                                imageUrl: obra.imageUrl,
+                                likes: obra.likes
+                            }"></app-art-card>
+                            <div class="artwork-stats">
+                                <span class="stat">
+                                    <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                </span>
+                                <span class="stat">
+                                    <i class="bi bi-heart"></i> {{ obra.likes }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <ng-template #noPersonal>
+                    <div class="no-artworks">
+                        <i class="bi bi-palette"></i>
+                        <p>No hay obras personales</p>
+                    </div>
+                </ng-template>
+            </div>
+        </section>
+    </main>
+
+    <!-- Upload Button -->
+    <app-upload-button></app-upload-button>
+
+    <!-- Upload Modal -->
+    <app-upload-art-form></app-upload-art-form>
+</div>

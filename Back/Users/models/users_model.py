@@ -40,6 +40,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, blank=True, null=True)
     nombre = models.CharField(max_length=50, null=True, blank=True, default="")
     apellidos = models.CharField(max_length=50, null=True, blank=True, default="")
+    descripcion = models.TextField(blank=True, null=True, default="")
+    imagen_perfil = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    
     is_active = models.BooleanField(default=True, verbose_name="¿Está activo?",
                                     help_text="Si está desactivado, el usuario no podrá acceder a su cuenta")
 

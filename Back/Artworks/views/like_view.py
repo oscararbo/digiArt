@@ -36,7 +36,7 @@ class ToggleLikeView(APIView):
                 'success': True,
                 'action': action,
                 'likes': artwork.likes,
-                'message': f'Obra {"marcada como favorita" if action == "liked" else "removida de favoritos"}'
+                'message': f'Obra {"marcada como favorita" if action == "liked" else "eliminada de favoritos"}'
             }, status=status.HTTP_200_OK)
             
         except Artwork.DoesNotExist:

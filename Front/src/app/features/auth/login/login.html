@@ -3,6 +3,10 @@
     <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
   </div>
 
+  <div *ngIf="errorMessage" class="mb-3">
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+  </div>
+
   <div class="mb-5 mt-3 border-bottom">
     <h2 class="h3 text-center w-100 mb-4">Iniciar sesión</h2>
   </div>

@@ -21,6 +21,9 @@
                     </ng-container>
                     <ng-container *ngIf="!cargandoBusqueda">Buscar</ng-container>
                 </button>
+                <button class="btn-profile" routerLink="/profile" title="Mi Perfil">
+                    <i class="bi bi-person-circle"></i>
+                </button>
             </div>
             <div *ngIf="!searchSectionCollapsed" class="filters-section">
                 <div class="filter-group">
@@ -32,7 +35,7 @@
                             (click)="limpiarBusqueda()">
                             Todos
                         </button>
-                        <button *ngFor="let genero of todasGeneros()" 
+                        <button *ngFor="let genero of todosGeneros()" 
                                 class="tag-filter" 
                                 [class.active]="generoSeleccionado === genero.id"
                                 (click)="cambiarGeneroFiltro(genero.id)">
@@ -73,8 +76,8 @@
                     </button>
                 </div>
 
-                <div *ngIf="resultadosBusqueda.length > 0; else noResults" class="results-grid">
-                    <div *ngFor="let obra of resultadosBusqueda" class="result-item">
+                <div *ngIf="resultadosBusqueda().length > 0; else noResults" class="results-grid">
+                    <div *ngFor="let obra of resultadosBusqueda()" class="result-item">
                         <app-art-card 
                             [data]="{ 
                                 id: obra.id, 
@@ -145,8 +148,8 @@
                 </div>
 
                 <!-- Grid de 3 columnas con 30 obras -->
-                <div *ngIf="obrasPaginadas && obrasPaginadas.length > 0; else noModalArtworks" class="modal-grid">
-                    <div *ngFor="let obra of obrasPaginadas" class="grid-item">
+                <div *ngIf="obrasPaginadas().length > 0; else noModalArtworks" class="modal-grid">
+                    <div *ngFor="let obra of obrasPaginadas()" class="grid-item">
                         <app-art-card [data]="{ 
                             id: obra.id, 
                             title: obra.titulo, 

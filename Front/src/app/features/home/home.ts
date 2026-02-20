@@ -1,10 +1,14 @@
 import { Component, OnInit, effect, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ArtCard } from '../../shared/components/art-card/art-card';
 import { UploadButton } from '../../shared/components/upload-button/upload-button';
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
 import { LoginPopupService } from '../../shared/services/login-popup.service';
+import { UserService } from '../../core/services/user.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 // Simple shared signals for genres and artworks
 export const genresSignal = signal<any[]>([]);
@@ -37,13 +41,15 @@ interface HomeSection {
     templateUrl: './home.html',
     styleUrl: './home.scss',
     standalone: true,
-    imports: [CommonModule, ArtCard, UploadButton, UploadArtForm, FormsModule]
+    imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule, RouterLink]
 })
 export class Home implements OnInit {
     private loginPopupService = inject(LoginPopupService);
+    private userService = inject(UserService);
+    private http = inject(HttpClient);
     
     secciones = signal<HomeSection[]>([]);
-    todasGeneros = signal<any[]>([]);
+    todosGeneros = signal<any[]>([]);
     usuarioActual: any = null;
     
     // State for search and filters
@@ -53,15 +59,30 @@ export class Home implements OnInit {
     busquedaTermino: string = '';
     generoSeleccionado: number | null = null;
     ordenarPor: 'reciente' | 'populares' = 'reciente';
-    resultadosBusqueda: Artwork[] = [];
+    resultadosBusqueda = signal<Artwork[]>([]);
     mostrandoBusqueda: boolean = false;
     cargandoBusqueda: boolean = false;
     
-    // Modal
-    modalActiva: boolean = false;
-    modalSeccion: HomeSection | null = null;
-    obrasPaginadas: Artwork[] = [];
-    pagina: number = 0;
+    // Modal (signal-backed property to keep template bindings working)
+    private _modalActiva = signal<boolean>(false);
+    private _modalSeccion = signal<HomeSection | null>(null);
+
+    get modalActiva(): boolean {
+        return this._modalActiva();
+    }
+
+    set modalActiva(value: boolean) {
+        this._modalActiva.set(value);
+    }
+
+    get modalSeccion(): HomeSection | null {
+        return this._modalSeccion();
+    }
+
+    set modalSeccion(value: HomeSection | null) {
+        this._modalSeccion.set(value);
+    }
+    obrasPaginadas = signal<Artwork[]>([]);
     obrasPorPagina: number = 30;
 
     constructor() {
@@ -69,49 +90,59 @@ export class Home implements OnInit {
         effect(() => {
             const g = genresSignal();
             if (g) {
-                this.todasGeneros.set(g);
+                this.todosGeneros.set(g);
             }
         });
 
         effect(() => {
             const a = artworksSignal();
-            // If there's a newly added artwork signal, try to insert it locally into relevant sections
+            // If artworksSignal changes, try to apply updates to existing artworks across sections
             if (a && a.length > 0) {
-                const latestRaw = a[0];
                 try {
-                    const mapped = this.mapearObras([latestRaw])[0];
-                    
-                    // Use update() to ensure proper reactivity and create new references
+                    // For each updated artwork in the global signal, update matching entries in sections or insert if new
+                    const updates = a.map(raw => this.mapearObras([raw])[0]);
+
                     this.secciones.update(currentSecciones => {
-                        // Create a new array with updated sections to trigger Angular change detection
                         return currentSecciones.map(sec => {
-                            if (sec.tipo === 'recientes') {
-                                // Check if artwork already exists
-                                if (!sec.obras.find(o => o.id === mapped.id)) {
-                                    return {
-                                        ...sec,
-                                        obras: [mapped, ...sec.obras]
-                                    };
-                                }
-                                return sec;
-                            }
-                            
-                            if (sec.tipo === 'genero' && mapped.generos_nombres && sec.genreNombre && mapped.generos_nombres.includes(sec.genreNombre)) {
-                                // Check if artwork already exists
-                                if (!sec.obras.find(o => o.id === mapped.id)) {
-                                    return {
-                                        ...sec,
-                                        obras: [mapped, ...sec.obras]
-                                    };
+                            const newObras = sec.obras.map(o => {
+                                const updated = updates.find(u => String(u.id) === String(o.id));
+                                return updated ? updated : o;
+                            });
+
+                            // Also insert any new artworks into recientes or genre sections
+                            const toInsert: Artwork[] = [];
+                            for (const upd of updates) {
+                                const exists = newObras.find(no => String(no.id) === String(upd.id));
+                                if (!exists) {
+                                    if (sec.tipo === 'recientes') {
+                                        toInsert.push(upd);
+                                    } else if (sec.tipo === 'genero' && upd.generos_nombres && sec.genreNombre && upd.generos_nombres.includes(sec.genreNombre)) {
+                                        toInsert.push(upd);
+                                    }
                                 }
                             }
-                            
-                            return sec;
+
+                            // Prepend new inserts but avoid duplicates
+                            const merged = toInsert.length > 0 ? [...toInsert, ...newObras] : newObras;
+                            return { ...sec, obras: merged };
                         });
                     });
+                    // Also update search results and modal paginated list so they reflect artwork updates
+                    try {
+                        this.resultadosBusqueda.update(list => list.map(o => {
+                            const upd = updates.find(u => String(u.id) === String(o.id));
+                            return upd ? upd : o;
+                        }));
+                    } catch (e) {}
+
+                    try {
+                        this.obrasPaginadas.update(list => list.map(o => {
+                            const upd = updates.find(u => String(u.id) === String(o.id));
+                            return upd ? upd : o;
+                        }));
+                    } catch (e) {}
                 } catch (err) {
-                    // If mapping fails, we can ignore and rely on manual refresh
-                    console.error('Error inserting artwork:', err);
+                    console.error('Error applying artwork updates to sections:', err);
                 }
             }
         });
@@ -151,7 +182,7 @@ export class Home implements OnInit {
             if (data.success) {
                 // Filter genres to include only visual arts genres for the home page and search filters
                 const filtrados = this.filtrarGenerosVisuales(data.genres);
-                this.todasGeneros.set(filtrados);
+                this.todosGeneros.set(filtrados);
             }
         } catch (error) {
             console.error('Error cargando géneros:', error);
@@ -191,7 +222,7 @@ export class Home implements OnInit {
         }
 
         // Artworks by genre (only for genres that have artworks)
-        for (const genero of this.todasGeneros()) {
+        for (const genero of this.todosGeneros()) {
             const obrasPorGenero = await this.cargarObrasPorGenero(genero.id, genero.nombre);
             if (obrasPorGenero) {
                 nuevasSecciones.push(obrasPorGenero);
@@ -309,7 +340,6 @@ export class Home implements OnInit {
      */
     async abrirModal(seccion: HomeSection) {
         this.modalSeccion = { ...seccion };
-        this.pagina = 0;
 
         try {
             const limit = 30;
@@ -331,7 +361,7 @@ export class Home implements OnInit {
             const data = await response.json();
 
             if (data.success) {
-                this.obrasPaginadas = this.mapearObras(data.artworks);
+                this.obrasPaginadas.set(this.mapearObras(data.artworks));
                 this.modalActiva = true;
             }
         } catch (error) {
@@ -346,7 +376,7 @@ export class Home implements OnInit {
     cerrarModal() {
         this.modalActiva = false;
         this.modalSeccion = null;
-        this.obrasPaginadas = [];
+        this.obrasPaginadas.set([]);
         // Reload sections to update artworks data after closing modal (e.g., if user liked an artwork)
         this.cargarDatos();
     }
@@ -399,7 +429,7 @@ export class Home implements OnInit {
                     obras = obras.sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime());
                 }
 
-                this.resultadosBusqueda = obras;
+                this.resultadosBusqueda.set(obras);
             }
         } catch (error) {
             console.error('Error en búsqueda:', error);
@@ -416,7 +446,7 @@ export class Home implements OnInit {
         this.busquedaTermino = '';
         this.generoSeleccionado = null;
         this.mostrandoBusqueda = false;
-        this.resultadosBusqueda = [];
+        this.resultadosBusqueda.set([]);
     }
 
     /**
@@ -446,42 +476,71 @@ export class Home implements OnInit {
         this.searchSectionCollapsed = !this.searchSectionCollapsed;
     }
 
-    // Handle the like/unlike action for an artwork. This function is called when the user clicks on the like button for an artwork, allowing them to like or unlike the artwork and updating the like count accordingly.
+    /**
+     * Toggle the like status of an artwork by making an API call to the backend.
+     * This function is called when the user clicks on the like button for an artwork, allowing them to like or unlike the artwork and see the updated like count in real-time.
+     * @param obra 
+     * @returns 
+     */
     async toggleLike(obra: Artwork) {
         const token = localStorage.getItem('access_token');
-        
+
         if (!token) {
-            // Show login pop-up if user is not authenticated
             this.loginPopupService.open();
             return;
         }
 
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/artworks/${obra.id}/like/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            // Use UserService liked list to compute action
+            const wasLiked = !!this.userService.userLikedArtworks().find((a: any) => String(a.id) === String(obra.id));
+            const action = wasLiked ? 'remove' : 'add';
+
+            let data: any;
+            try {
+                const headers = { 'Authorization': `Bearer ${token}` };
+                data = await firstValueFrom(this.http.post<any>(
+                    `http://127.0.0.1:8000/api/artworks/${obra.id}/like/`,
+                    { action },
+                    { headers }
+                ));
+            } catch (httpErr: any) {
+                console.error('Like request failed', httpErr);
+                if (httpErr?.status === 401) {
+                    this.loginPopupService.open();
+                    return;
                 }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                obra.likes = data.likes;
+                throw httpErr;
             }
+
+            const nowLiked = data.action === 'add' || data.action === 'liked' || (data.success && (data.action === undefined) ? (data.likes > 0) : false);
+            const updated = { ...(obra as any), likes: data.likes ?? obra.likes, liked: !!nowLiked };
+
+            // Propagate globally and update user's liked list
+            try { this.userService.updateArtworkGlobally(updated); } catch (e) { console.error(e); }
+            try {
+                if (updated.liked) {
+                    this.userService.userLikedArtworks.update(list => {
+                        if (list.find(a => String(a.id) === String(updated.id))) return list;
+                        return [{ ...(updated as any) }, ...list];
+                    });
+                } else {
+                    this.userService.userLikedArtworks.update(list => list.filter(a => String(a.id) !== String(updated.id)));
+                }
+            } catch (e) { console.error(e); }
+
         } catch (error) {
             console.error('Error al dar like:', error);
         }
     }
 
-    // Pagination logic for the modal displaying artworks in a section. This function calculates the artworks to be displayed on the current page of the modal based on the total artworks and the defined number of artworks per page.
+    // Pagination logic for the modal displaying artworks in a section.
+    // This function calculates the artworks to be displayed on the current page of the modal based on the total artworks and the defined number of artworks per page.
     get contarObrasPorFila(): number {
         return 3;
     }
 
     // Calculate the artworks to be displayed on the current page of the modal based on pagination.
     get filasObrasModal(): number {
-        return Math.ceil(this.obrasPaginadas.length / this.contarObrasPorFila);
+        return Math.ceil(this.obrasPaginadas().length / this.contarObrasPorFila);
     }
 }

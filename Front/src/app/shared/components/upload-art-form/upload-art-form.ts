@@ -5,7 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { UploadModalService } from '../../services/upload-modal.service';
 import { LoginPopupService } from '../../services/login-popup.service';
 import { genresSignal, artworksSignal } from '../../../features/home/home';
+import { UserService } from '../../../core/services/user.service';
 import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 interface Genre {
     id: number;
@@ -51,6 +54,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
     private formBuilder = inject(FormBuilder);
     private uploadModalService = inject(UploadModalService);
     private loginPopupService = inject(LoginPopupService);
+    private userService = inject(UserService);
+    private http = inject(HttpClient);
 
     constructor() {
         this.uploadForm = this.formBuilder.group({
@@ -111,15 +116,11 @@ export class UploadArtForm implements OnInit, OnDestroy {
      */
     async cargarGeneros() {
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/genres/');
-            const data = await response.json();
-            
-            if (data.success) {
-                // Filtrar solo artes visuales
+            const data = await firstValueFrom(this.http.get<any>('http://127.0.0.1:8000/api/genres/'));
+            if (data?.success) {
                 const generosVisuales = this.filtrarGenerosVisuales(data.genres);
                 this.generosDisponibles = generosVisuales;
                 this.generosFiltrados = generosVisuales;
-                // Update shared signal
                 genresSignal.set(generosVisuales);
             }
         } catch (error) {
@@ -286,34 +287,30 @@ export class UploadArtForm implements OnInit, OnDestroy {
             const token = localStorage.getItem('access_token');
 
             if (!token) {
-                // Open login pop-up if user is not authenticated
                 this.loginPopupService.open();
                 this.cargando = false;
                 return;
             }
 
-            const response = await fetch('http://127.0.0.1:8000/api/artworks/create/', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: formData,
-            });
+            const data = await firstValueFrom(this.http.post<any>('http://127.0.0.1:8000/api/artworks/create/', formData));
 
-            const data = await response.json();
-
-            if (!response.ok) {
+            if (!data || !data.success && !data.artwork) {
                 console.error('Errores del servidor:', data);
-                const errorMsg = data.error || data.errors?.titulo?.[0] || `Error: ${response.status}`;
+                const errorMsg = data?.error || data?.errors?.titulo?.[0] || 'Error desconocido';
                 alert('Error: ' + errorMsg);
                 return;
             }
             
-            // If the upload is successful, add the new artwork to the shared signal so that it appears in the home page without needing to refresh.
+            // If the upload is successful, add the new artwork to the shared signals so that it appears without needing to refresh.
             try {
                 const created = data.artwork ?? data;
                 if (created) {
+                    // Update home page signal
                     artworksSignal.update(list => [created, ...list]);
+                    // Update the user's personal artworks via UserService (no global signals file)
+                    try {
+                        this.userService.userPersonalArtworks.update(list => [created, ...list]);
+                    } catch (e) {}
                 }
             } catch (e) {}
 
