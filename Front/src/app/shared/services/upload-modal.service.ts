@@ -8,18 +8,12 @@ export class UploadModalService {
     private isModalOpenSubject = new BehaviorSubject<boolean>(false);
     public isModalOpen$ = this.isModalOpenSubject.asObservable();
 
-    constructor() {}
-
     openModal() {
         this.isModalOpenSubject.next(true);
     }
 
     closeModal() {
         this.isModalOpenSubject.next(false);
-    }
-
-    toggle() {
-        this.isModalOpenSubject.next(!this.isModalOpenSubject.value);
     }
 
     isOpen(): boolean {

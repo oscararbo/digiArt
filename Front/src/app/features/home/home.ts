@@ -7,6 +7,8 @@ import { UploadButton } from '../../shared/components/upload-button/upload-butto
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
 import { LoginPopupService } from '../../shared/services/login-popup.service';
 import { UserService } from '../../core/services/user.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { AuthGuard } from '../../core/guards/auth.guard';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -47,6 +49,8 @@ export class Home implements OnInit {
     private loginPopupService = inject(LoginPopupService);
     private userService = inject(UserService);
     private http = inject(HttpClient);
+    private notificationService = inject(NotificationService);
+    private authGuard = inject(AuthGuard);
     
     sections = signal<HomeSection[]>([]);
     allGenres = signal<any[]>([]);
@@ -142,7 +146,7 @@ export class Home implements OnInit {
                         }));
                     } catch (e) {}
                 } catch (err) {
-                    console.error('Error applying artwork updates to sections:', err);
+                    this.notificationService.showError('Error al actualizar obras. Por favor recarga la página.');
                 }
             }
         });
@@ -185,7 +189,7 @@ export class Home implements OnInit {
                 this.allGenres.set(filtered);
             }
         } catch (error) {
-            console.error('Error loading genres:', error);
+            this.notificationService.showError('Error al cargar los géneros. Por favor intenta de nuevo.');
         }
     }
 
@@ -253,7 +257,7 @@ export class Home implements OnInit {
                 };
             }
         } catch (error) {
-            console.error('Error loading featured artworks:', error);
+            this.notificationService.showError('Error al cargar obras destacadas. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -278,7 +282,7 @@ export class Home implements OnInit {
                 };
             }
         } catch (error) {
-            console.error('Error loading recent artworks:', error);
+            this.notificationService.showError('Error al cargar novedades. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -307,7 +311,7 @@ export class Home implements OnInit {
                 };
             }
         } catch (error) {
-            console.error(`Error loading artworks for genre ${genreName}:`, error);
+            this.notificationService.showError('Error al cargar artworks del género. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -365,7 +369,7 @@ export class Home implements OnInit {
                 this.isModalOpen = true;
             }
         } catch (error) {
-            console.error('Error loading modal artworks:', error);
+            this.notificationService.showError('Error al cargar más artworks. Por favor intenta de nuevo.');
         }
     }
 
@@ -432,7 +436,7 @@ export class Home implements OnInit {
                 this.searchResults.set(artworks);
             }
         } catch (error) {
-            console.error('Error searching artworks:', error);
+            this.notificationService.showError('Error al buscar artworks. Por favor intenta de nuevo.');
         } finally {
             this.isSearchLoading = false;
         }
@@ -483,6 +487,11 @@ export class Home implements OnInit {
      * @returns 
      */
     async toggleLike(artwork: Artwork) {
+        // Check authentication before proceeding
+        if (!this.authGuard.checkAuthentication()) {
+            return;
+        }
+
         const token = localStorage.getItem('access_token');
 
         if (!token) {
@@ -504,11 +513,11 @@ export class Home implements OnInit {
                     { headers }
                 ));
             } catch (httpErr: any) {
-                console.error('Like request failed', httpErr);
                 if (httpErr?.status === 401) {
                     this.loginPopupService.open();
                     return;
                 }
+                this.notificationService.showError('Error al procesar el "Me gusta". Por favor intenta de nuevo.');
                 throw httpErr;
             }
 
@@ -516,7 +525,7 @@ export class Home implements OnInit {
             const updated = { ...(artwork as any), likeCount: data.likes ?? artwork.likeCount, liked: !!nowLiked };
 
             // Propagate globally and update user's liked list
-            try { this.userService.updateArtworkGlobally(updated); } catch (e) { console.error(e); }
+            try { this.userService.updateArtworkGlobally(updated); } catch (e) { }
             try {
                 if (updated.liked) {
                     this.userService.userLikedArtworks.update(list => {
@@ -526,10 +535,10 @@ export class Home implements OnInit {
                 } else {
                     this.userService.userLikedArtworks.update(list => list.filter(a => String(a.id) !== String(updated.id)));
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { }
 
         } catch (error) {
-            console.error('Error toggling like:', error);
+            this.notificationService.showError('Error al cambiar el estado de "Me gusta". Por favor intenta de nuevo.');
         }
     }
 

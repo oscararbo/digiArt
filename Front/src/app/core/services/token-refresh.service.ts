@@ -3,12 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
 import { switchMap, tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { NotificationService } from './notification.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class TokenRefreshService {
     private http = inject(HttpClient);
+    private notificationService = inject(NotificationService);
     private refreshSubscription: Subscription | null = null;
     private isRefreshing = false;
 
@@ -24,11 +26,10 @@ export class TokenRefreshService {
                 tap((response: any) => {
                     if (response.access) {
                         localStorage.setItem('access_token', response.access);
-                        console.log('Token renovado exitosamente');
                     }
                 }),
                 catchError((error) => {
-                    console.error('Error renovando token:', error);
+                    this.notificationService.showError('Tu sesión ha expirado. Por favor inicia sesión de nuevo.');
                     // If there's an error refreshing the token, clear session and redirect to login
                     this.clearSession();
                     window.location.href = '/auth/login';
@@ -102,7 +103,6 @@ export class TokenRefreshService {
 
             if (response && response.access) {
                 localStorage.setItem('access_token', response.access);
-                console.log('Token renovado manualmente');
                 this.isRefreshing = false;
                 return true;
             }
@@ -110,7 +110,7 @@ export class TokenRefreshService {
             this.isRefreshing = false;
             return false;
         } catch (error) {
-            console.error('Error renovando token manualmente:', error);
+            this.notificationService.showError('Error al renovar la sesión. Por favor inicia sesión de nuevo.');
             this.clearSession();
             this.isRefreshing = false;
             return false;

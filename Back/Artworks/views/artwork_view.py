@@ -5,7 +5,6 @@ from rest_framework.views import APIView
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Count, Q
-from django.db import models
 
 from Artworks.models import Genre
 from Artworks.serializers import GenreSerializer

@@ -4,6 +4,7 @@ import { NgClass, CommonModule, NgIf } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
 import { Router } from '@angular/router';
 import { TokenRefreshService } from '../../../core/services/token-refresh.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +21,7 @@ export class Login implements OnInit {
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
   private tokenRefreshService = inject(TokenRefreshService);
+  private notificationService = inject(NotificationService);
 
   constructor() {
     this.formLogin = this.formBuilder.group({
@@ -82,7 +84,6 @@ export class Login implements OnInit {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Errores del servidor:', data);
         // Extract error message from backend response
         let errorMsg = 'Credenciales inválidas';
         
@@ -106,8 +107,6 @@ export class Login implements OnInit {
         this.errorMessage.set(errorMsg);
         return;
       }
-
-      console.log('Login exitoso:', data);
       
       // Save tokens and user info in localStorage
       localStorage.setItem('access_token', data.access);
@@ -119,7 +118,7 @@ export class Login implements OnInit {
       
       this.router.navigate(['/home']);
     } catch (error) {
-      console.error('Error en la solicitud:', error);
+      this.notificationService.showError('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
       this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     } finally {
       this.cargando = false;

@@ -1,6 +1,11 @@
 <div class="profile-container" [class.sidebar-collapsed]="isSidebarCollapsed()">
     <!-- Sidebar: User Profile Info (33% or collapsed) -->
     <aside class="profile-sidebar" [class.collapsed]="isSidebarCollapsed()">
+        <!-- Back Button -->
+        <button class="btn-back" (click)="goBack()" title="Volver a inicio">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+
         <div class="sidebar-content">
             <!-- Profile Picture -->
             <div class="profile-avatar">
@@ -19,54 +24,63 @@
                 </p>
             </div>
 
-            <!-- Edit Button/Form (only for current user) -->
-            <div *ngIf="isCurrentUser()" class="profile-actions">
-                <button *ngIf="!isEditingProfile()" 
-                        class="btn btn-edit-profile"
-                        (click)="startEditingProfile()">
-                    <i class="bi bi-pencil"></i> Editar perfil
-                </button>
+            <!-- Edit Form (only for current user) -->
+            <div *ngIf="isCurrentUser() && isEditingProfile()" class="edit-form">
+                <div *ngIf="profileMessage()" class="mb-3">
+                    <div class="alert alert-danger" role="alert">{{ profileMessage() }}</div>
+                </div>
+                <div class="form-group">
+                    <label>Nombre de usuario</label>
+                    <input 
+                        type="text" 
+                        [(ngModel)]="editingUsername"
+                        (blur)="checkUsername()"
+                        (input)="checkUsername()"
+                        class="form-control"
+                        [class.is-invalid]="isUsernameTaken()">
+                    <small *ngIf="isUsernameTaken()" class="text-danger">
+                        Este nombre de usuario ya esta en uso
+                    </small>
+                </div>
 
-                <!-- Edit Form -->
-                <div *ngIf="isEditingProfile()" class="edit-form">
-                    <div *ngIf="profileMessage()" class="mb-3">
-                        <div class="alert alert-danger" role="alert">{{ profileMessage() }}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Nombre de usuario</label>
-                        <input 
-                            type="text" 
-                            [(ngModel)]="editingUsername"
-                            (blur)="checkUsername()"
-                            (input)="checkUsername()"
-                            class="form-control"
-                            [class.is-invalid]="isUsernameTaken()">
-                        <small *ngIf="isUsernameTaken()" class="text-danger">
-                            Este nombre de usuario ya esta en uso
-                        </small>
-                    </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea 
+                        [(ngModel)]="editingDescription"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Cuéntanos sobre ti..."></textarea>
+                </div>
 
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea 
-                            [(ngModel)]="editingDescription"
-                            class="form-control"
-                            rows="3"
-                            placeholder="Cuéntanos sobre ti..."></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-save" 
-                                (click)="saveProfileChanges()"
-                                [disabled]="isUsernameTaken() || savingProfile() || editingUsername().trim().length === 0">
-                            Guardar
-                        </button>
-                        <button class="btn btn-cancel" (click)="cancelEditingProfile()">
-                            Cancelar
-                        </button>
-                    </div>
+                <div class="form-actions">
+                    <button class="btn btn-save" 
+                            (click)="saveProfileChanges()"
+                            [disabled]="isUsernameTaken() || savingProfile() || editingUsername().trim().length === 0">
+                        Guardar
+                    </button>
+                    <button class="btn btn-cancel" (click)="cancelEditingProfile()">
+                        Cancelar
+                    </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Bottom Buttons -->
+        <div class="sidebar-bottom-actions" *ngIf="!isSidebarCollapsed()">
+            <button *ngIf="isCurrentUser() && !isEditingProfile()" 
+                    class="btn-action btn-action-edit"
+                    (click)="startEditingProfile()"
+                    title="Editar perfil">
+                <i class="bi bi-pencil"></i>
+                <span>Editar perfil</span>
+            </button>
+            <button *ngIf="isCurrentUser()" 
+                    class="btn-action btn-action-logout"
+                    (click)="logout()"
+                    title="Cerrar sesión">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Cerrar sesión</span>
+            </button>
         </div>
 
         <!-- Collapse Button -->

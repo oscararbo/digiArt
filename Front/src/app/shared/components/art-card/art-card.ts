@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { UserService } from '../../../core/services/user.service';
 import { LoginPopupService } from '../../services/login-popup.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { AuthGuard } from '../../../core/guards/auth.guard';
 import { NgClass, NgIf } from "@angular/common";
 
 @Component({
@@ -37,6 +39,8 @@ export class ArtCard implements OnInit {
   private loginPopup = inject(LoginPopupService);
   private http = inject(HttpClient);
   private cd = inject(ChangeDetectorRef);
+  private notificationService = inject(NotificationService);
+  private authGuard = inject(AuthGuard);
 
   // Effect must be created in an injection context (field initializer or constructor)
   private _sync = effect(() => {
@@ -46,7 +50,7 @@ export class ArtCard implements OnInit {
     try {
       this.artworkSignal = this.userService.getArtworkSignal(String(id), this.data);
     } catch (e) {
-      console.error('Error obtaining artwork signal:', e);
+      this.notificationService.showError('Error al cargar los datos de la obra. Por favor recarga la página.');
       return;
     }
 
@@ -72,7 +76,7 @@ export class ArtCard implements OnInit {
         const user = JSON.parse(userStr);
         this.currentUserId = user?.id;
       } catch (e) {
-        console.error('Error parsing user from localStorage:', e);
+        this.notificationService.showError('Error al procesar tus datos. Por favor intenta de nuevo.');
       }
     }
   }
@@ -98,12 +102,17 @@ export class ArtCard implements OnInit {
   async toggleFavorite(event: Event) {
     event.stopPropagation();
     
+    // Check authentication before proceeding
+    if (!this.authGuard.checkAuthentication()) {
+      return;
+    }
+
     // Use current user ID from localStorage if userId not provided
     const userId = this.userId || this.currentUserId;
     
     if (!userId) {
       // Open shared login popup instead of alert
-      try { this.loginPopup.open(); } catch (e) { console.warn('Login popup service not available', e); }
+      try { this.loginPopup.open(); } catch (e) { }
       return;
     }
 
@@ -115,7 +124,7 @@ export class ArtCard implements OnInit {
       // Ensure we have a token; if not, open login popup
       const token = localStorage.getItem('access_token');
       if (!token) {
-        try { this.loginPopup.open(); } catch (e) { console.warn('Login popup service not available', e); }
+        try { this.loginPopup.open(); } catch (e) { }
         this.loadingFav = false;
         return;
       }
@@ -134,13 +143,12 @@ export class ArtCard implements OnInit {
           { headers }
         ));
       } catch (httpErr: any) {
-        console.error('Like request failed', httpErr);
-        // If unauthorized, open login popup
         if (httpErr?.status === 401) {
           try { this.loginPopup.open(); } catch (e) {}
           this.loadingFav = false;
           return;
         }
+        this.notificationService.showError('Error al actualizar favorito. Por favor intenta de nuevo.');
         throw httpErr;
       }
       // Compute new liked state from server response
@@ -151,7 +159,7 @@ export class ArtCard implements OnInit {
       try {
         this.userService.updateArtworkGlobally(updated);
       } catch (e) {
-        console.error('Error propagating updated artwork:', e);
+        this.notificationService.showError('Error al actualizar la obra. Por favor intenta de nuevo.');
       }
 
       // Then update the user's liked list (add or remove)
@@ -165,7 +173,7 @@ export class ArtCard implements OnInit {
           this.userService.userLikedArtworks.update(list => list.filter(a => String(a.id) !== String(updated.id)));
         }
       } catch (e) {
-        console.error('Error updating userLikedArtworks:', e);
+        this.notificationService.showError('Error al actualizar favoritos. Por favor intenta de nuevo.');
       }
 
       // Update local fields and stabilize view
@@ -173,10 +181,8 @@ export class ArtCard implements OnInit {
       this.liked = !!updated.liked;
       // stabilize view after applying server-driven changes
       try { this.cd.detectChanges(); } catch (e) {}
-      console.log('Favorite response', res);
     } catch (err) {
-      console.error(err);
-      alert('Error al actualizar favorito');
+      this.notificationService.showError('Error al actualizar favorito. Por favor intenta de nuevo.');
     } finally {
       this.loadingFav = false;
     }

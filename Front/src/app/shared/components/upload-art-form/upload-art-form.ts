@@ -6,6 +6,8 @@ import { UploadModalService } from '../../services/upload-modal.service';
 import { LoginPopupService } from '../../services/login-popup.service';
 import { genresSignal, artworksSignal } from '../../../features/home/home';
 import { UserService } from '../../../core/services/user.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { AuthGuard } from '../../../core/guards/auth.guard';
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -56,6 +58,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
     private loginPopupService = inject(LoginPopupService);
     private userService = inject(UserService);
     private http = inject(HttpClient);
+    private notificationService = inject(NotificationService);
+    private authGuard = inject(AuthGuard);
 
     constructor() {
         this.uploadForm = this.formBuilder.group({
@@ -124,7 +128,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
                 genresSignal.set(visualGenres);
             }
         } catch (error) {
-            console.error('Error loading genres:', error);
+            this.notificationService.showError('Error al cargar los géneros. Por favor intenta de nuevo.');
         }
     }
 
@@ -218,13 +222,13 @@ export class UploadArtForm implements OnInit, OnDestroy {
         // Validate extension
         const ext = file.name.split('.').pop()?.toLowerCase();
         if (!ext || !this.allowedExtensions.includes(ext)) {
-            alert(`Extensión no permitida. Usa: ${this.allowedExtensions.join(', ')}`);
+            this.notificationService.showError(`Extensión no permitida. Usa: ${this.allowedExtensions.join(', ')}`);
             return;
         }
 
         // Validate size
         if (file.size > this.maxSizeMb * 1024 * 1024) {
-            alert(`La imagen no puede exceder ${this.maxSizeMb}MB`);
+            this.notificationService.showError(`La imagen no puede exceder ${this.maxSizeMb}MB`);
             return;
         }
 
@@ -251,23 +255,28 @@ export class UploadArtForm implements OnInit, OnDestroy {
     async submitArtwork() {
         this.showErrors = true;
 
+        // Check authentication before proceeding
+        if (!this.authGuard.checkAuthentication()) {
+            return;
+        }
+
         if (this.uploadForm.invalid) {
-            alert('Por favor completa los campos obligatorios');
+            this.notificationService.showError('Por favor completa los campos obligatorios');
             return;
         }
 
         if (!this.selectedFile) {
-            alert('Selecciona una imagen');
+            this.notificationService.showError('Selecciona una imagen');
             return;
         }
 
         if (this.selectedGenres.length === 0) {
-            alert('Selecciona al menos un género');
+            this.notificationService.showError('Selecciona al menos un género');
             return;
         }
 
         if (!this.currentUser) {
-            alert('Debes estar autenticado para subir una obra');
+            this.notificationService.showError('Debes estar autenticado para subir una obra');
             return;
         }
 
@@ -296,9 +305,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
             const data = await firstValueFrom(this.http.post<any>('http://127.0.0.1:8000/api/artworks/create/', formData, { headers }));
 
             if (!data || !data.success && !data.artwork) {
-                console.error('Server errors:', data);
                 const errorMsg = data?.error || data?.errors?.title?.[0] || 'Error desconocido';
-                alert('Error: ' + errorMsg);
+                this.notificationService.showError('Error: ' + errorMsg);
                 return;
             }
             
@@ -325,8 +333,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
             this.closeModal();
             
         } catch (error) {
-            console.error('Request error:', error);
-            alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+            this.notificationService.showError('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
         } finally {
             this.isLoading = false;
         }

@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { signal, WritableSignal } from '@angular/core';
+import { signal, WritableSignal, inject } from '@angular/core';
 import { artworksSignal } from '../../features/home/home';
 import { firstValueFrom } from 'rxjs';
+import { NotificationService } from './notification.service';
 
 export interface UserProfile {
     id: number;
@@ -20,6 +21,7 @@ export interface UserProfile {
 })
 export class UserService {
     private apiUrl = 'http://127.0.0.1:8000/api';
+    private notificationService = inject(NotificationService);
     
     // User profile signal
     userProfile = signal<UserProfile | null>(null);
@@ -89,7 +91,7 @@ export class UserService {
             this.userPersonalArtworks.update(list => list.map(a => String(a.id) === String(normalized.id) ? normalized : a));
             this.userLikedArtworks.update(list => list.map(a => String(a.id) === String(normalized.id) ? normalized : a));
         } catch (e) {
-            console.error('Error propagating artwork update:', e);
+            // Error propagating artwork update - silently handled
         }
         // Also update per-artwork signal if present
         try {
@@ -97,7 +99,7 @@ export class UserService {
             const sig = this.artworkSignals.get(key);
             if (sig) sig.set(normalized);
         } catch (e) {
-            console.error('Error updating per-artwork signal:', e);
+            // Error updating per-artwork signal - silently handled
         }
     }
 
@@ -118,7 +120,7 @@ export class UserService {
                     this.getUserPersonalArtworks(userId);
                 }
             } catch (e) {
-                console.error('Error parsing user from localStorage:', e);
+                // Error parsing user from localStorage - silently handled
             }
         }
     }
@@ -131,7 +133,7 @@ export class UserService {
             const data = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/users/${username}/`));
             if (data?.success) return data.user;
         } catch (error) {
-            console.error(`Error fetching user profile for ${username}:`, error);
+            this.notificationService.showError('Error al cargar el perfil del usuario. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -160,7 +162,7 @@ export class UserService {
                 return true;
             }
         } catch (error) {
-            console.error('Error updating user profile:', error);
+            this.notificationService.showError('Error al actualizar el perfil. Por favor intenta de nuevo.');
         }
         return false;
     }
@@ -235,7 +237,7 @@ export class UserService {
                 return normalized;
             }
         } catch (error) {
-            console.error('Error fetching user liked artworks:', error);
+            this.notificationService.showError('Error al cargar los artworks que te gustan. Por favor intenta de nuevo.');
             this.userLikedArtworks.set([]);
         }
         return [];
@@ -253,7 +255,7 @@ export class UserService {
                 return normalized;
             }
         } catch (error) {
-            console.error('Error fetching user personal artworks:', error);
+            this.notificationService.showError('Error al cargar los artworks que subiste. Por favor intenta de nuevo.');
             this.userPersonalArtworks.set([]);
         }
         return [];

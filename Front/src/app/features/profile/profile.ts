@@ -1,11 +1,12 @@
 import { Component, OnInit, inject, signal, Signal, effect } from '@angular/core';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ArtCard } from '../../shared/components/art-card/art-card';
 import { UploadButton } from '../../shared/components/upload-button/upload-button';
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
 import { UserService, UserProfile } from '../../core/services/user.service';
+import { LogoutService } from '../../core/services/logout.service';
 
 interface Artwork {
     id: string;
@@ -27,10 +28,10 @@ interface Artwork {
     imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule]
 })
 export class Profile implements OnInit {
-    // TODO: Add a logout button in the profile sidebar.
-    // TODO: Add a back/home button in the profile view.
     private userService = inject(UserService);
     private route = inject(ActivatedRoute);
+    private router = inject(Router);
+    private logoutService = inject(LogoutService);
 
     // User data
     userProfile = signal<UserProfile | null>(null);
@@ -133,6 +134,20 @@ export class Profile implements OnInit {
             likeCount: artwork.like_count ?? 0,
             createdAt: artwork.created_at || ''
         }));
+    }
+
+    /**
+     * Navigate back to home
+     */
+    goBack() {
+        this.router.navigate(['/home']);
+    }
+
+    /**
+     * Logout the current user
+     */
+    logout() {
+        this.logoutService.logout();
     }
 
     /**

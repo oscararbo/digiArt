@@ -4,6 +4,7 @@ import { NgClass, CommonModule } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
 import { Router } from '@angular/router';
 import { TokenRefreshService } from '../../../core/services/token-refresh.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-register',
@@ -25,6 +26,7 @@ export class Register {
   private emailCheckTimeout: any;
   private usernameCheckTimeout: any;
   private tokenRefreshService = inject(TokenRefreshService);
+  private notificationService = inject(NotificationService);
 
   constructor(private formBuilder: FormBuilder, private router: Router) {
     this.registerForm = this.formBuilder.group({
@@ -67,7 +69,7 @@ export class Register {
         const data = await response.json();
         this.isEmailAvailable = data.available;
       } catch (error) {
-        console.error('Error verificando email:', error);
+        this.notificationService.showError('Error al verificar el correo. Por favor intenta de nuevo.');
         this.isEmailAvailable = null;
       } finally {
         this.isCheckingEmail = false;
@@ -100,7 +102,7 @@ export class Register {
         const data = await response.json();
         this.isUsernameAvailable = data.available;
       } catch (error) {
-        console.error('Error verificando username:', error);
+        this.notificationService.showError('Error al verificar el nombre de usuario. Por favor intenta de nuevo.');
         this.isUsernameAvailable = null;
       } finally {
         this.isCheckingUsername = false;
@@ -165,7 +167,6 @@ export class Register {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Errores del servidor:', data);
         const errors = data.errors || {};
         const errorMsg = 
           errors.email?.[0] || 
@@ -181,7 +182,6 @@ export class Register {
       // Login after successful registration using the original credentials
       await this.loginAfterRegister(this.registerForm.value.email, this.registerForm.value.password);
     } catch (error) {
-      console.error('Error en la solicitud:', error);
       this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     } finally {
       this.isLoading = false;
@@ -210,13 +210,10 @@ export class Register {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Errores del servidor:', data);
         const errorMsg = data.errors?.email?.[0] || data.errors?.password?.[0] || data.error || 'Error desconocido';
         this.errorMessage.set(errorMsg);
         return;
       }
-
-      console.log('Login exitoso:', data);
 
       // Save tokens and user info in localStorage
       localStorage.setItem('access_token', data.access);
@@ -229,7 +226,6 @@ export class Register {
       // Navigate to home page after successful login
       this.router.navigate(['/home']);
     } catch (error) {
-      console.error('Error en la solicitud de inicio de sesión:', error);
       this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     }
   }
