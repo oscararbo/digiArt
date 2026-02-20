@@ -8,21 +8,17 @@ from Artworks.serializers import ArtworkSerializer
 
 
 class UserLikedArtworksView(APIView):
-    """Obtener obras favoritas (likes) de un usuario"""
+    """Get artworks liked by a user."""
     permission_classes = [AllowAny]
 
     def get(self, request, user_id):
         try:
-            # Verificar que el usuario existe
             user = CustomUser.objects.get(id=user_id)
             
-            # Obtener todos los likes del usuario
-            likes = Like.objects.filter(usuario=user).select_related('artwork')
+            likes = Like.objects.filter(user=user).select_related('artwork')
             
-            # Extraer las obras de los likes
             artworks = [like.artwork for like in likes]
             
-            # Serializar las obras
             serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
             
             return Response({

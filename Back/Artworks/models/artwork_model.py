@@ -4,47 +4,49 @@ import uuid
 
 
 class Artwork(models.Model):
-    """Modelo para las obras de arte subidas por los usuarios"""
+    """Artwork uploaded by a user."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    titulo = models.CharField(max_length=200, blank=False, null=False)
-    descripcion = models.TextField(blank=True, null=True, default="")
+    title = models.CharField(max_length=200, blank=False, null=False, db_column='titulo')
+    description = models.TextField(blank=True, null=True, default="", db_column='descripcion')
     
-    # Relación con el usuario (autor)
-    autor = models.ForeignKey(
+    # Author relationship
+    author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='artworks',
         blank=False,
-        null=False
+        null=False,
+        db_column='autor_id'
     )
     
-    # Géneros (máximo 3)
-    generos = models.ManyToManyField('Genre', related_name='artworks', blank=True)
+    # Genres (max 3)
+    genres = models.ManyToManyField('Genre', related_name='artworks', blank=True)
     
-    # Imagen
-    imagen = models.ImageField(
+    # Image
+    image = models.ImageField(
         upload_to='artworks/',
         blank=False,
         null=False,
-        help_text="Imagen de la obra (máximo 10MB)"
+        help_text="Imagen de la obra (máximo 10MB)",
+        db_column='imagen'
     )
     
-    # Metadatos
-    vistas = models.IntegerField(default=0)
-    likes = models.IntegerField(default=0)
+    # Metrics
+    view_count = models.IntegerField(default=0, db_column='vistas')
+    like_count = models.IntegerField(default=0, db_column='likes')
     
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    updated_at = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
     
     class Meta:
         db_table = 'artworks'
-        ordering = ['-fecha_creacion']
-        verbose_name = 'Obra'
-        verbose_name_plural = 'Obras'
+        ordering = ['-created_at']
+        verbose_name = 'Artwork'
+        verbose_name_plural = 'Artworks'
         
     def __str__(self):
-        return f"{self.titulo} - {self.autor.username}"
+        return f"{self.title} - {self.author.username}"
     
-    def get_generos_count(self):
-        return self.generos.count()
+    def get_genres_count(self):
+        return self.genres.count()

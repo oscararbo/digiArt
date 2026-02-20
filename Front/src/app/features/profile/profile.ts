@@ -9,14 +9,14 @@ import { UserService, UserProfile } from '../../core/services/user.service';
 
 interface Artwork {
     id: string;
-    titulo: string;
-    descripcion: string;
-    autor_username: string;
+    title: string;
+    description: string;
+    authorUsername: string;
     imageUrl: string;
-    generos_nombres: string[];
-    vistas: number;
-    likes: number;
-    fecha_creacion: string;
+    genreNames: string[];
+    viewCount: number;
+    likeCount: number;
+    createdAt: string;
 }
 
 @Component({
@@ -27,6 +27,8 @@ interface Artwork {
     imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule]
 })
 export class Profile implements OnInit {
+    // TODO: Add a logout button in the profile sidebar.
+    // TODO: Add a back/home button in the profile view.
     private userService = inject(UserService);
     private route = inject(ActivatedRoute);
 
@@ -36,17 +38,21 @@ export class Profile implements OnInit {
     isEditingProfile = signal<boolean>(false);
     editingUsername = signal<string>('');
     editingDescription = signal<string>('');
-    usernameExists = signal<boolean>(false);
-    checkingUsername = signal<boolean>(false);
+    isUsernameTaken = signal<boolean>(false);
+    isCheckingUsername = signal<boolean>(false);
+    profileMessage = signal<string | null>(null);
+    savingProfile = signal<boolean>(false);
+    private usernameCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+    private pendingUsernameCheck: string | null = null;
 
     // Artworks
     likedArtworks = signal<Artwork[]>([]);
     personalArtworks = signal<Artwork[]>([]);
 
     // Section state
-    favoritesExpanded = signal<boolean>(true);
-    personalExpanded = signal<boolean>(true);
-    sidebarCollapsed = signal<boolean>(false);
+    isFavoritesExpanded = signal<boolean>(true);
+    isPersonalExpanded = signal<boolean>(true);
+    isSidebarCollapsed = signal<boolean>(false);
 
     // Search/filter
     favoritesSearchTerm = signal<string>('');
@@ -118,14 +124,14 @@ export class Profile implements OnInit {
     mapArtworks(artworks: any[]): Artwork[] {
         return artworks.map(artwork => ({
             id: artwork.id || '',
-            titulo: artwork.titulo || '',
-            descripcion: artwork.descripcion || '',
-            autor_username: artwork.autor_username || '',
-            imageUrl: artwork.imageUrl || '',
-            generos_nombres: artwork.generos_nombres || [],
-            vistas: artwork.vistas || 0,
-            likes: artwork.likes || 0,
-            fecha_creacion: artwork.fecha_creacion || ''
+            title: artwork.title || '',
+            description: artwork.description || '',
+            authorUsername: artwork.author_username || artwork.author || artwork.user?.username || '',
+            imageUrl: artwork.imageUrl || artwork.image_url || '',
+            genreNames: artwork.genre_names || [],
+            viewCount: artwork.view_count ?? 0,
+            likeCount: artwork.like_count ?? 0,
+            createdAt: artwork.created_at || ''
         }));
     }
 
@@ -138,7 +144,8 @@ export class Profile implements OnInit {
         const profile = this.userProfile();
         if (profile) {
             this.editingUsername.set(profile.username);
-            this.editingDescription.set(profile.descripcion || '');
+            this.editingDescription.set(profile.description || '');
+            this.profileMessage.set(null);
             this.isEditingProfile.set(true);
         }
     }
@@ -148,8 +155,9 @@ export class Profile implements OnInit {
      */
     cancelEditingProfile() {
         this.isEditingProfile.set(false);
-        this.usernameExists.set(false);
-        this.checkingUsername.set(false);
+        this.isUsernameTaken.set(false);
+        this.isCheckingUsername.set(false);
+        this.profileMessage.set(null);
     }
 
     /**
@@ -157,39 +165,85 @@ export class Profile implements OnInit {
      */
     async checkUsername() {
         const profile = this.userProfile();
-        const newUsername = this.editingUsername();
+        const newUsername = this.editingUsername().trim();
         
         if (!profile || newUsername === profile.username) {
-            this.usernameExists.set(false);
+            this.isUsernameTaken.set(false);
             return;
         }
 
-        this.checkingUsername.set(true);
-        const exists = await this.userService.checkUsernameExists(newUsername);
-        this.usernameExists.set(exists);
-        this.checkingUsername.set(false);
+        if (newUsername.length < 3) {
+            this.isUsernameTaken.set(false);
+            return;
+        }
+        if (this.usernameCheckTimeout) {
+            clearTimeout(this.usernameCheckTimeout);
+        }
+
+        this.isCheckingUsername.set(true);
+        this.pendingUsernameCheck = newUsername;
+        this.usernameCheckTimeout = setTimeout(async () => {
+            const exists = await this.userService.checkUsernameExists(newUsername);
+            if (this.pendingUsernameCheck === newUsername) {
+                this.isUsernameTaken.set(exists);
+                this.isCheckingUsername.set(false);
+            }
+        }, 350);
     }
 
     /**
      * Save profile changes
      */
     async saveProfileChanges() {
-        if (this.usernameExists() || this.editingUsername().trim().length === 0) {
-            alert('Por favor selecciona un nombre de usuario válido');
+        if (this.savingProfile()) {
+            return;
+        }
+        const trimmedUsername = this.editingUsername().trim();
+        if (trimmedUsername.length === 0) {
+            this.profileMessage.set('Por favor selecciona un nombre de usuario válido');
+            return;
+        }
+
+        if (this.usernameCheckTimeout) {
+            clearTimeout(this.usernameCheckTimeout);
+            this.usernameCheckTimeout = null;
+        }
+        this.isCheckingUsername.set(false);
+
+        const profile = this.userProfile();
+        if (profile && trimmedUsername !== profile.username) {
+            this.isCheckingUsername.set(true);
+            const exists = await this.userService.checkUsernameExists(trimmedUsername);
+            this.isUsernameTaken.set(exists);
+            this.isCheckingUsername.set(false);
+            if (exists) {
+                this.profileMessage.set('Este nombre de usuario ya esta en uso');
+                return;
+            }
+        }
+
+        if (this.isUsernameTaken()) {
+            this.profileMessage.set('Este nombre de usuario ya esta en uso');
             return;
         }
 
         const updates = {
-            username: this.editingUsername(),
-            descripcion: this.editingDescription()
+            username: trimmedUsername,
+            description: this.editingDescription()
         };
 
-        const success = await this.userService.updateUserProfile(updates);
-        if (success) {
-            this.isEditingProfile.set(false);
-            alert('Perfil actualizado exitosamente');
-        } else {
-            alert('Error al actualizar el perfil');
+        this.savingProfile.set(true);
+        try {
+            const success = await this.userService.updateUserProfile(updates);
+            if (success) {
+                this.userProfile.set(this.userService.userProfile());
+                this.isEditingProfile.set(false);
+                this.profileMessage.set('Perfil actualizado exitosamente');
+            } else {
+                this.profileMessage.set('Error al actualizar el perfil');
+            }
+        } finally {
+            this.savingProfile.set(false);
         }
     }
 
@@ -199,9 +253,9 @@ export class Profile implements OnInit {
     get filteredLikedArtworks(): Artwork[] {
         const term = this.favoritesSearchTerm().toLowerCase();
         return this.likedArtworks().filter(artwork =>
-            (artwork?.titulo || '').toLowerCase().includes(term) ||
-            (artwork?.autor_username || '').toLowerCase().includes(term) ||
-            (artwork?.generos_nombres || []).some((g: any) => (g || '').toLowerCase().includes(term))
+            (artwork?.title || '').toLowerCase().includes(term) ||
+            (artwork?.authorUsername || '').toLowerCase().includes(term) ||
+            (artwork?.genreNames || []).some((g: any) => (g || '').toLowerCase().includes(term))
         );
     }
 
@@ -211,9 +265,9 @@ export class Profile implements OnInit {
     get filteredPersonalArtworks(): Artwork[] {
         const term = this.personalSearchTerm().toLowerCase();
         return this.personalArtworks().filter(artwork =>
-            (artwork?.titulo || '').toLowerCase().includes(term) ||
-            (artwork?.autor_username || '').toLowerCase().includes(term) ||
-            (artwork?.generos_nombres || []).some((g: any) => (g || '').toLowerCase().includes(term))
+            (artwork?.title || '').toLowerCase().includes(term) ||
+            (artwork?.authorUsername || '').toLowerCase().includes(term) ||
+            (artwork?.genreNames || []).some((g: any) => (g || '').toLowerCase().includes(term))
         );
     }
 
@@ -221,7 +275,7 @@ export class Profile implements OnInit {
      * Get artworks grouped in rows of 4 (or 6 if sidebar is collapsed)
      */
     get likedArtworksRows(): Artwork[][] {
-        const cols = this.sidebarCollapsed() ? 6 : 4;
+        const cols = this.isSidebarCollapsed() ? 6 : 4;
         const rows: Artwork[][] = [];
         const filtered = this.filteredLikedArtworks;
         
@@ -235,7 +289,7 @@ export class Profile implements OnInit {
      * Get artworks grouped in rows of 4 (or 6 if sidebar is collapsed)
      */
     get personalArtworksRows(): Artwork[][] {
-        const cols = this.sidebarCollapsed() ? 6 : 4;
+        const cols = this.isSidebarCollapsed() ? 6 : 4;
         const rows: Artwork[][] = [];
         const filtered = this.filteredPersonalArtworks;
         
@@ -249,20 +303,20 @@ export class Profile implements OnInit {
      * Toggle sidebar collapsed state
      */
     toggleSidebarCollapsed() {
-        this.sidebarCollapsed.update(v => !v);
+        this.isSidebarCollapsed.update(v => !v);
     }
 
     /**
      * Toggle favorites section
      */
     toggleFavorites() {
-        this.favoritesExpanded.update(v => !v);
+        this.isFavoritesExpanded.update(v => !v);
     }
 
     /**
      * Toggle personal section
      */
     togglePersonal() {
-        this.personalExpanded.update(v => !v);
+        this.isPersonalExpanded.update(v => !v);
     }
 }

@@ -7,11 +7,7 @@ from Users.models import CustomUser
 
 
 class CheckUsernameView(APIView):
-    """
-    GET: Verificar si un username está disponible
-    Parámetros query:
-    - username: nombre a verificar (obligatorio)
-    """
+    """GET: Check whether a username is available."""
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -26,14 +22,14 @@ class CheckUsernameView(APIView):
         if len(username) < 3:
             return Response({
                 'success': False,
-                'disponible': False,
+                'available': False,
                 'error': 'El nombre de usuario debe tener al menos 3 caracteres'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        disponible = not CustomUser.objects.filter(username=username).exists()
+        is_available = not CustomUser.objects.filter(username=username).exists()
         
         return Response({
             'success': True,
             'username': username,
-            'disponible': disponible
+            'available': is_available
         }, status=status.HTTP_200_OK)

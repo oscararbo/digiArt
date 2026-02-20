@@ -3,44 +3,45 @@ from Artworks.models import Artwork, Genre
 
 
 class ArtworkSerializer(serializers.ModelSerializer):
-    generos = serializers.PrimaryKeyRelatedField(
+    image = serializers.ImageField(required=False, allow_null=True, use_url=False)
+    genres = serializers.PrimaryKeyRelatedField(
         queryset=Genre.objects.all(),
         many=True,
         required=False
     )
-    autor_username = serializers.CharField(source='autor.username', read_only=True)
-    generos_nombres = serializers.SerializerMethodField()
-    imageUrl = serializers.SerializerMethodField()
+    author_username = serializers.CharField(source='author.username', read_only=True)
+    genre_names = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Artwork
         fields = (
-            'id', 'titulo', 'descripcion', 'imagen', 'imageUrl',
-            'generos', 'generos_nombres', 'autor_username',
-            'vistas', 'likes', 'fecha_creacion'
+            'id', 'title', 'description', 'image', 'image_url',
+            'genres', 'genre_names', 'author_username',
+            'view_count', 'like_count', 'created_at'
         )
-        read_only_fields = ('id', 'vistas', 'likes', 'fecha_creacion', 'autor_username', 'imageUrl')
+        read_only_fields = ('id', 'view_count', 'like_count', 'created_at', 'author_username', 'image_url')
     
-    def get_generos_nombres(self, obj):
-        return [g.nombre for g in obj.generos.all()]
+    def get_genre_names(self, obj):
+        return [g.name for g in obj.genres.all()]
     
-    def get_imageUrl(self, obj):
-        if obj.imagen:
+    def get_image_url(self, obj):
+        if obj.image:
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.imagen.url)
-            return f'http://127.0.0.1:8000{obj.imagen.url}'
+                return request.build_absolute_uri(obj.image.url)
+            return f'http://127.0.0.1:8000{obj.image.url}'
         return None
     
-    def validate_generos(self, generos):
-        if len(generos) > 3:
+    def validate_genres(self, genres):
+        if len(genres) > 3:
             raise serializers.ValidationError("Máximo 3 géneros permitidos")
-        return generos
+        return genres
     
-    def validate_imagen(self, imagen):
+    def validate_image(self, image):
         # Validar que sea una imagen (extensión)
         extensiones_permitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
-        ext = imagen.name.split('.')[-1].lower()
+        ext = image.name.split('.')[-1].lower()
         
         if ext not in extensiones_permitidas:
             raise serializers.ValidationError(
@@ -48,21 +49,21 @@ class ArtworkSerializer(serializers.ModelSerializer):
             )
         
         # Validar tamaño máximo (10MB)
-        if imagen.size > 10 * 1024 * 1024:
+        if image.size > 10 * 1024 * 1024:
             raise serializers.ValidationError("El archivo no puede exceder 10MB")
         
-        return imagen
+        return image
     
-    def validate_titulo(self, titulo):
-        if len(titulo) < 3:
+    def validate_title(self, title):
+        if len(title) < 3:
             raise serializers.ValidationError("El título debe tener al menos 3 caracteres")
-        if len(titulo) > 200:
+        if len(title) > 200:
             raise serializers.ValidationError("El título no puede exceder 200 caracteres")
-        return titulo
+        return title
 
 
 class ArtworkCreateSerializer(serializers.ModelSerializer):
-    generos = serializers.PrimaryKeyRelatedField(
+    genres = serializers.PrimaryKeyRelatedField(
         queryset=Genre.objects.all(),
         many=True,
         required=False
@@ -70,30 +71,30 @@ class ArtworkCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Artwork
-        fields = ('titulo', 'descripcion', 'imagen', 'generos')
+        fields = ('title', 'description', 'image', 'genres')
     
-    def validate_generos(self, generos):
-        if len(generos) > 3:
+    def validate_genres(self, genres):
+        if len(genres) > 3:
             raise serializers.ValidationError("Máximo 3 géneros permitidos")
-        return generos
+        return genres
     
-    def validate_imagen(self, imagen):
+    def validate_image(self, image):
         extensiones_permitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
-        ext = imagen.name.split('.')[-1].lower()
+        ext = image.name.split('.')[-1].lower()
         
         if ext not in extensiones_permitidas:
             raise serializers.ValidationError(
                 f"Extensión no permitida. Extensiones válidas: {', '.join(extensiones_permitidas)}"
             )
         
-        if imagen.size > 10 * 1024 * 1024:
+        if image.size > 10 * 1024 * 1024:
             raise serializers.ValidationError("El archivo no puede exceder 10MB")
         
-        return imagen
+        return image
     
-    def validate_titulo(self, titulo):
-        if len(titulo) < 3:
+    def validate_title(self, title):
+        if len(title) < 3:
             raise serializers.ValidationError("El título debe tener al menos 3 caracteres")
-        if len(titulo) > 200:
+        if len(title) > 200:
             raise serializers.ValidationError("El título no puede exceder 200 caracteres")
-        return titulo
+        return title

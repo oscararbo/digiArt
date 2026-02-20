@@ -38,19 +38,19 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True, blank=False, null=False)
     username = models.CharField(max_length=50, blank=True, null=True)
-    nombre = models.CharField(max_length=50, null=True, blank=True, default="")
-    apellidos = models.CharField(max_length=50, null=True, blank=True, default="")
-    descripcion = models.TextField(blank=True, null=True, default="")
-    imagen_perfil = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    first_name = models.CharField(max_length=50, null=True, blank=True, default="", db_column='nombre')
+    last_name = models.CharField(max_length=50, null=True, blank=True, default="", db_column='apellidos')
+    description = models.TextField(blank=True, null=True, default="", db_column='descripcion')
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True, db_column='imagen_perfil')
     
-    is_active = models.BooleanField(default=True, verbose_name="¿Está activo?",
-                                    help_text="Si está desactivado, el usuario no podrá acceder a su cuenta")
+    is_active = models.BooleanField(default=True, verbose_name="Is active?",
+                                    help_text="If disabled, the user cannot access their account")
 
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
+    updated_at = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
 
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'
@@ -59,17 +59,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = 'users'
         ordering = ['-is_superuser', 'is_active', 'email']
-        verbose_name = 'Usuario'
-        verbose_name_plural = 'Usuarios'
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
 
     def __str__(self):
-        full_name = f"{self.nombre} {self.apellidos}".strip()
+        full_name = f"{self.first_name} {self.last_name}".strip()
         if not full_name:
-            full_name = "Sin nombre"
+            full_name = "No name"
         return f"{self.username} - {full_name} ({self.email})"
 
     def get_full_name(self):
-        return f"{self.nombre} {self.apellidos}".strip()
+        return f"{self.first_name} {self.last_name}".strip()
 
     def get_short_name(self):
-        return self.nombre
+        return self.first_name

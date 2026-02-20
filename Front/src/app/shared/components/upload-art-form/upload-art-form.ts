@@ -12,16 +12,16 @@ import { firstValueFrom } from 'rxjs';
 
 interface Genre {
     id: number;
-    nombre: string;
-    descripcion: string;
+    name: string;
+    description: string;
 }
 
 interface User {
     id: number;
     email: string;
     username: string;
-    nombre: string;
-    apellidos: string;
+    first_name: string;
+    last_name: string;
 }
 
 @Component({
@@ -33,22 +33,22 @@ interface User {
 })
 export class UploadArtForm implements OnInit, OnDestroy {
     uploadForm: FormGroup;
-    cargando: boolean = false;
-    mostrarErrores: boolean = false;
-    mostrarModal: boolean = false;
+    isLoading: boolean = false;
+    showErrors: boolean = false;
+    isModalVisible: boolean = false;
     
-    generosDisponibles: Genre[] = [];
-    generosFiltrados: Genre[] = [];
-    generosSeleccionados: Genre[] = [];
-    mostrarListaGeneros: boolean = false;
-    buscandoGeneros: boolean = false;
+    availableGenres: Genre[] = [];
+    filteredGenres: Genre[] = [];
+    selectedGenres: Genre[] = [];
+    isGenreListVisible: boolean = false;
+    isSearchingGenres: boolean = false;
     
-    imagenPreview: string | null = null;
-    usuarioActual: User | null = null;
+    imagePreview: string | null = null;
+    currentUser: User | null = null;
     selectedFile: File | null = null;
     
-    extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-    tamanioMaximoMB = 10;
+    allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    maxSizeMb = 10;
     
     private modalSubscription: Subscription | null = null;
     private formBuilder = inject(FormBuilder);
@@ -59,10 +59,10 @@ export class UploadArtForm implements OnInit, OnDestroy {
 
     constructor() {
         this.uploadForm = this.formBuilder.group({
-            titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
-            descripcion: ['', [Validators.maxLength(500)]],
-            imagen: ['', Validators.required],
-            buscarGenero: [''],
+            title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
+            description: ['', [Validators.maxLength(500)]],
+            image: ['', Validators.required],
+            searchGenre: [''],
         });
     }
     
@@ -72,14 +72,14 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * @returns
      */
     ngOnInit() {
-        this.obtenerUsuario();
-        this.cargarGeneros();
+        this.loadCurrentUser();
+        this.loadGenres();
         
-        // Suscribirse al observable del modal
-        this.modalSubscription = this.uploadModalService.modalAbierto.subscribe(
-            (abierto: boolean) => {
-                this.mostrarModal = abierto;
-                if (abierto) {
+        // Subscribe to the modal observable so the UI stays in sync.
+        this.modalSubscription = this.uploadModalService.isModalOpen$.subscribe(
+            (isOpen: boolean) => {
+                this.isModalVisible = isOpen;
+                if (isOpen) {
                     document.body.style.overflow = 'hidden';
                 } else {
                     document.body.style.overflow = 'auto';
@@ -102,10 +102,10 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * Fetch the current user's information from localStorage. This is used to associate the uploaded artwork with the user.
      * @returns
      */
-    obtenerUsuario() {
+    loadCurrentUser() {
         const userStr = localStorage.getItem('user');
         if (userStr) {
-            this.usuarioActual = JSON.parse(userStr);
+            this.currentUser = JSON.parse(userStr);
         }
     }
 
@@ -114,28 +114,28 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * It filters the genres to include only those related to visual arts and stores them in the component state for use in the genre selection dropdown.
      * @returns
      */
-    async cargarGeneros() {
+    async loadGenres() {
         try {
             const data = await firstValueFrom(this.http.get<any>('http://127.0.0.1:8000/api/genres/'));
             if (data?.success) {
-                const generosVisuales = this.filtrarGenerosVisuales(data.genres);
-                this.generosDisponibles = generosVisuales;
-                this.generosFiltrados = generosVisuales;
-                genresSignal.set(generosVisuales);
+                const visualGenres = this.filterVisualGenres(data.genres);
+                this.availableGenres = visualGenres;
+                this.filteredGenres = visualGenres;
+                genresSignal.set(visualGenres);
             }
         } catch (error) {
-            console.error('Error cargando géneros:', error);
+            console.error('Error loading genres:', error);
         }
     }
 
     /**
      * Filter the list of genres to include only those that are relevant to visual arts.
-     * @param generos 
+    * @param genres 
      * @returns 
      */
-    filtrarGenerosVisuales(generos: any[]): any[] {
-        const generosVisuales = ['Pintura', 'Fotografía', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
-        return generos.filter(genero => generosVisuales.includes(genero.nombre));
+    filterVisualGenres(genres: any[]): any[] {
+        const visualGenres = ['Pintura', 'Fotografía', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
+        return genres.filter((genre) => visualGenres.includes(genre.name));
     }
 
     /**
@@ -144,21 +144,21 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * @param termino
      * @returns
      */
-    buscarGeneros(termino: string) {
-        termino = termino.trim().toLowerCase();
+    filterGenres(term: string) {
+        term = term.trim().toLowerCase();
         
-        if (!termino) {
-            this.generosFiltrados = this.generosDisponibles;
-            this.mostrarListaGeneros = false;
+        if (!term) {
+            this.filteredGenres = this.availableGenres;
+            this.isGenreListVisible = false;
             return;
         }
 
-        this.buscandoGeneros = true;
-        this.generosFiltrados = this.generosDisponibles.filter(g =>
-            g.nombre.toLowerCase().includes(termino)
+        this.isSearchingGenres = true;
+        this.filteredGenres = this.availableGenres.filter(g =>
+            g.name.toLowerCase().includes(term)
         );
-        this.mostrarListaGeneros = true;
-        this.buscandoGeneros = false;
+        this.isGenreListVisible = true;
+        this.isSearchingGenres = false;
     }
 
     /**
@@ -166,33 +166,33 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * It adds the selected genre to the list of selected genres, clears the search field, and hides the dropdown.
      * @returns
      */
-    seleccionarGenero(genero: Genre) {
-        if (this.generosSeleccionados.length < 3 && !this.generosSeleccionados.find(g => g.id === genero.id)) {
-            this.generosSeleccionados.push(genero);
-            this.uploadForm.get('buscarGenero')?.setValue('');
-            this.mostrarListaGeneros = false;
-            this.generosFiltrados = this.generosDisponibles;
+    selectGenre(genre: Genre) {
+        if (this.selectedGenres.length < 3 && !this.selectedGenres.find(g => g.id === genre.id)) {
+            this.selectedGenres.push(genre);
+            this.uploadForm.get('searchGenre')?.setValue('');
+            this.isGenreListVisible = false;
+            this.filteredGenres = this.availableGenres;
         }
     }
 
     /**
      * Remove a genre from the list of selected genres. 
      * It updates the state to reflect the change and allows the user to select a different genre if desired.
-     * @param generoId
+     * @param genreId
      * @returns
      */
-    removerGenero(generoId: number) {
-        this.generosSeleccionados = this.generosSeleccionados.filter(g => g.id !== generoId);
+    removeGenre(genreId: number) {
+        this.selectedGenres = this.selectedGenres.filter(g => g.id !== genreId);
     }
 
     /**
      * Check if a genre is currently selected.
      * This is used to prevent duplicate selections and to manage the state of the genre selection dropdown.
-     * @param generoId
+     * @param genreId
      * @returns
      */
-    isGeneroSeleccionado(generoId: number): boolean {
-        return this.generosSeleccionados.some(g => g.id === generoId);
+    isGenreSelected(genreId: number): boolean {
+        return this.selectedGenres.some(g => g.id === genreId);
     }
 
     /**
@@ -200,9 +200,9 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * It also hides any error messages and resets the image preview and selected file.
      * @returns
      */
-    cerrarModal() {
-        this.mostrarErrores = false;
-        this.uploadModalService.cerrarModal();
+    closeModal() {
+        this.showErrors = false;
+        this.uploadModalService.closeModal();
     }
 
     /**
@@ -210,21 +210,21 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * It validates the file's extension and size, generates a preview of the image, and updates the form state accordingly.
      * @returns
      */
-    onImagenSelected(event: any) {
+    onImageSelected(event: any) {
         const file = event.target.files[0];
         
         if (!file) return;
 
         // Validate extension
         const ext = file.name.split('.').pop()?.toLowerCase();
-        if (!ext || !this.extensionesPermitidas.includes(ext)) {
-            alert(`Extensión no permitida. Usa: ${this.extensionesPermitidas.join(', ')}`);
+        if (!ext || !this.allowedExtensions.includes(ext)) {
+            alert(`Extensión no permitida. Usa: ${this.allowedExtensions.join(', ')}`);
             return;
         }
 
         // Validate size
-        if (file.size > this.tamanioMaximoMB * 1024 * 1024) {
-            alert(`La imagen no puede exceder ${this.tamanioMaximoMB}MB`);
+        if (file.size > this.maxSizeMb * 1024 * 1024) {
+            alert(`La imagen no puede exceder ${this.maxSizeMb}MB`);
             return;
         }
 
@@ -233,13 +233,13 @@ export class UploadArtForm implements OnInit, OnDestroy {
         
         const reader = new FileReader();
         reader.onload = (e) => {
-            this.imagenPreview = e.target?.result as string;
+            this.imagePreview = e.target?.result as string;
         };
         reader.readAsDataURL(file);
         
         // Mark the form control as touched to trigger validation messages if needed
-        this.uploadForm.get('imagen')?.markAsTouched();
-        this.uploadForm.get('imagen')?.updateValueAndValidity();
+        this.uploadForm.get('image')?.markAsTouched();
+        this.uploadForm.get('image')?.updateValueAndValidity();
     }
 
     /**
@@ -248,8 +248,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * It also manages the loading state and displays appropriate success or error messages based on the API response.
      * @returns
      */
-    async subirObra() {
-        this.mostrarErrores = true;
+    async submitArtwork() {
+        this.showErrors = true;
 
         if (this.uploadForm.invalid) {
             alert('Por favor completa los campos obligatorios');
@@ -261,42 +261,43 @@ export class UploadArtForm implements OnInit, OnDestroy {
             return;
         }
 
-        if (this.generosSeleccionados.length === 0) {
+        if (this.selectedGenres.length === 0) {
             alert('Selecciona al menos un género');
             return;
         }
 
-        if (!this.usuarioActual) {
+        if (!this.currentUser) {
             alert('Debes estar autenticado para subir una obra');
             return;
         }
 
-        this.cargando = true;
+        this.isLoading = true;
 
         try {
             const formData = new FormData();
-            formData.append('titulo', this.uploadForm.get('titulo')?.value);
-            formData.append('descripcion', this.uploadForm.get('descripcion')?.value || '');
-            formData.append('imagen', this.selectedFile);
+            formData.append('title', this.uploadForm.get('title')?.value);
+            formData.append('description', this.uploadForm.get('description')?.value || '');
+            formData.append('image', this.selectedFile);
             
             // Add selected genres as multiple entries in the FormData
-            this.generosSeleccionados.forEach(g => {
-                formData.append('generos', g.id.toString());
+            this.selectedGenres.forEach(g => {
+                formData.append('genres', g.id.toString());
             });
 
             const token = localStorage.getItem('access_token');
 
             if (!token) {
                 this.loginPopupService.open();
-                this.cargando = false;
+                this.isLoading = false;
                 return;
             }
 
-            const data = await firstValueFrom(this.http.post<any>('http://127.0.0.1:8000/api/artworks/create/', formData));
+            const headers = { 'Authorization': `Bearer ${token}` };
+            const data = await firstValueFrom(this.http.post<any>('http://127.0.0.1:8000/api/artworks/create/', formData, { headers }));
 
             if (!data || !data.success && !data.artwork) {
-                console.error('Errores del servidor:', data);
-                const errorMsg = data?.error || data?.errors?.titulo?.[0] || 'Error desconocido';
+                console.error('Server errors:', data);
+                const errorMsg = data?.error || data?.errors?.title?.[0] || 'Error desconocido';
                 alert('Error: ' + errorMsg);
                 return;
             }
@@ -305,9 +306,8 @@ export class UploadArtForm implements OnInit, OnDestroy {
             try {
                 const created = data.artwork ?? data;
                 if (created) {
-                    // Update home page signal
-                    artworksSignal.update(list => [created, ...list]);
-                    // Update the user's personal artworks via UserService (no global signals file)
+                    // Update shared signals using the normalized flow
+                    this.userService.updateArtworkGlobally(created);
                     try {
                         this.userService.userPersonalArtworks.update(list => [created, ...list]);
                     } catch (e) {}
@@ -316,19 +316,19 @@ export class UploadArtForm implements OnInit, OnDestroy {
 
             // Clear form and reset state
             this.uploadForm.reset();
-            this.generosSeleccionados = [];
-            this.imagenPreview = null;
+            this.selectedGenres = [];
+            this.imagePreview = null;
             this.selectedFile = null;
-            this.mostrarErrores = false;
+            this.showErrors = false;
 
             // Close modal after successful upload
-            this.cerrarModal();
+            this.closeModal();
             
         } catch (error) {
-            console.error('Error en la solicitud:', error);
+            console.error('Request error:', error);
             alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
         } finally {
-            this.cargando = false;
+            this.isLoading = false;
         }
     }
 }

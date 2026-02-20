@@ -255,10 +255,14 @@
 
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 2rem;
+            align-items: start;
 
             .result-item {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
                 position: relative;
 
                 .result-stats {
@@ -395,9 +399,8 @@
         }
 
         .artwork-card-wrapper {
-            flex: 0 0 calc(10% - 1.35rem);
-            min-width: 180px;
-            max-width: 200px;
+            flex: 0 0 280px;
+            min-width: 280px;
 
             app-art-card {
                 height: 100%;
@@ -489,7 +492,7 @@
 
                 app-art-card {
                     width: 100%;
-                    max-width: 250px;
+                    max-width: 280px;
                 }
             }
         }

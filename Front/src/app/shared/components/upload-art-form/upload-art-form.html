@@ -1,7 +1,7 @@
 <!-- Modal -->
 <div 
   class="modal fade" 
-  [class.show]="mostrarModal" 
+  [class.show]="isModalVisible" 
   tabindex="-1"
   role="dialog">
   <div class="modal-dialog modal-lg">
@@ -13,79 +13,79 @@
         <button 
           type="button" 
           class="btn-close btn-close-white" 
-          (click)="cerrarModal()"></button>
+          (click)="closeModal()"></button>
       </div>
 
       <div class="modal-body">
-          <!-- Usuario actual -->
-          @if (usuarioActual) {
+          <!-- Current user -->
+          @if (currentUser) {
             <div class="alert alert-info mb-4">
-              <strong>Subiendo como:</strong> {{ usuarioActual.username }}
+              <strong>Subiendo como:</strong> {{ currentUser.username }}
             </div>
           }
 
-          <form [formGroup]="uploadForm" (ngSubmit)="subirObra()" enctype="multipart/form-data">
+          <form [formGroup]="uploadForm" (ngSubmit)="submitArtwork()" enctype="multipart/form-data">
             
-            <!-- Título -->
+            <!-- Title -->
             <div class="mb-4">
               <label for="tituloInput" class="form-label fw-bold">Título de la Obra *</label>
               <input
                 type="text"
-                formControlName="titulo"
+                formControlName="title"
                 class="form-control form-control-lg"
                 id="tituloInput"
                 placeholder="Ej: Paisaje Nocturno"
                 [ngClass]="{
-                  'is-invalid': mostrarErrores && uploadForm.get('titulo')?.touched && uploadForm.get('titulo')?.errors,
-                  'is-valid': mostrarErrores && uploadForm.get('titulo')?.touched && !uploadForm.get('titulo')?.errors
+                  'is-invalid': showErrors && uploadForm.get('title')?.touched && uploadForm.get('title')?.errors,
+                  'is-valid': showErrors && uploadForm.get('title')?.touched && !uploadForm.get('title')?.errors
                 }">
-              @if (mostrarErrores && uploadForm.get('titulo')?.errors) {
+              @if (showErrors && uploadForm.get('title')?.errors) {
                 <div class="invalid-feedback d-block">
-                  @if (uploadForm.get('titulo')?.hasError('required')) {
+                  @if (uploadForm.get('title')?.hasError('required')) {
                     El título es obligatorio
-                  } @else if (uploadForm.get('titulo')?.hasError('minlength')) {
+                  } @else if (uploadForm.get('title')?.hasError('minlength')) {
                     Mínimo 3 caracteres
-                  } @else if (uploadForm.get('titulo')?.hasError('maxlength')) {
+                  } @else if (uploadForm.get('title')?.hasError('maxlength')) {
                     Máximo 200 caracteres
                   }
                 </div>
               }
             </div>
 
-            <!-- Descripción -->
+            <!-- Description -->
             <div class="mb-4">
               <label for="descripcionInput" class="form-label fw-bold">Descripción</label>
               <textarea
-                formControlName="descripcion"
+                formControlName="description"
                 class="form-control"
                 id="descripcionInput"
                 rows="3"
                 placeholder="Cuéntanos sobre tu obra..."
                 [ngClass]="{
-                  'is-invalid': mostrarErrores && uploadForm.get('descripcion')?.errors,
-                  'is-valid': mostrarErrores && uploadForm.get('descripcion')?.touched && !uploadForm.get('descripcion')?.errors
+                  'is-invalid': showErrors && uploadForm.get('description')?.errors,
+                  'is-valid': showErrors && uploadForm.get('description')?.touched && !uploadForm.get('description')?.errors
                 }"></textarea>
-              @if (mostrarErrores && uploadForm.get('descripcion')?.errors?.['maxlength']) {
+              @if (showErrors && uploadForm.get('description')?.errors?.['maxlength']) {
                 <div class="invalid-feedback d-block">
                   Máximo 500 caracteres
                 </div>
               }
             </div>
 
-            <!-- Búsqueda de Géneros -->
+            <!-- Genre search -->
             <div class="mb-4">
               <label for="buscarGeneroInput" class="form-label fw-bold">Géneros (Máximo 3) *</label>
               <div class="position-relative">
-                <input type="text" formControlName="buscarGenero" class="form-control form-control-lg" id="buscarGeneroInput"
-                  placeholder="Buscar género..." (input)="buscarGeneros($event.target.value)" (focus)="mostrarListaGeneros = true">
+                <input type="text" formControlName="searchGenre" class="form-control form-control-lg" id="buscarGeneroInput"
+                  placeholder="Buscar género..." (input)="filterGenres($event.target.value)" (focus)="isGenreListVisible = true">
             
-                @if (mostrarListaGeneros && !buscandoGeneros) {
+                @if (isGenreListVisible && !isSearchingGenres) {
                 <div class="dropdown-menu show w-100" style="position: absolute; top: 100%; left: 0; z-index: 1000;">
-                  @if (generosFiltrados.length > 0) {
-                  @for (genero of generosFiltrados; track genero.id) {
-                  <button type="button" class="dropdown-item" (click)="seleccionarGenero(genero)"
-                    [disabled]="isGeneroSeleccionado(genero.id)">
-                    {{ genero.nombre }}
+                  @if (filteredGenres.length > 0) {
+                  @for (genre of filteredGenres; track genre.id) {
+                  <button type="button" class="dropdown-item" (click)="selectGenre(genre)"
+                    [disabled]="isGenreSelected(genre.id)">
+                    {{ genre.name }}
                   </button>
                   }
                   } @else {
@@ -98,17 +98,17 @@
               </div>
             </div>
 
-            <!-- Géneros Seleccionados -->
-            @if (generosSeleccionados.length > 0) {
+            <!-- Selected genres -->
+            @if (selectedGenres.length > 0) {
               <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2">
-                  @for (genero of generosSeleccionados; track genero.id) {
+                  @for (genre of selectedGenres; track genre.id) {
                     <div class="badge bg-primary p-2">
-                      {{ genero.nombre }}
+                      {{ genre.name }}
                       <button
                         type="button"
                         class="btn-close btn-close-white ms-2 p-0"
-                        (click)="removerGenero(genero.id)"
+                        (click)="removeGenre(genre.id)"
                         style="width: 0.6rem; height: 0.6rem;"></button>
                     </div>
                   }
@@ -116,29 +116,29 @@
               </div>
             }
 
-            <!-- Upload de Imagen -->
+            <!-- Image upload -->
             <div class="mb-4">
               <label for="imagenInput" class="form-label fw-bold">Imagen de la Obra *</label>
               <div class="input-group">
                 <input
                   type="file"
-                  formControlName="imagen"
+                  formControlName="image"
                   class="form-control"
                   id="imagenInput"
                   accept="image/*"
-                  (change)="onImagenSelected($event)"
+                  (change)="onImageSelected($event)"
                   [ngClass]="{
-                    'is-invalid': mostrarErrores && uploadForm.get('imagen')?.errors,
-                    'is-valid': mostrarErrores && uploadForm.get('imagen')?.touched && !uploadForm.get('imagen')?.errors
+                    'is-invalid': showErrors && uploadForm.get('image')?.errors,
+                    'is-valid': showErrors && uploadForm.get('image')?.touched && !uploadForm.get('image')?.errors
                   }">
                 <span class="input-group-text">
                   <i class="bi bi-image"></i>
                 </span>
               </div>
               <small class="form-text text-muted d-block mt-2">
-                Formatos permitidos: {{ extensionesPermitidas.join(', ') }} (Máximo {{ tamanioMaximoMB }}MB)
+                Formatos permitidos: {{ allowedExtensions.join(', ') }} (Máximo {{ maxSizeMb }}MB)
               </small>
-              @if (mostrarErrores && uploadForm.get('imagen')?.errors) {
+              @if (showErrors && uploadForm.get('image')?.errors) {
                 <div class="invalid-feedback d-block">
                   La imagen es obligatoria
                 </div>
@@ -151,15 +151,15 @@
         <button 
           type="button" 
           class="btn btn-secondary" 
-          (click)="cerrarModal()">
+          (click)="closeModal()">
           Cancelar
         </button>
         <button
           type="button"
           class="btn btn-dark"
-          (click)="subirObra()"
-          [disabled]="cargando || uploadForm.invalid || generosSeleccionados.length === 0">
-          @if (cargando) {
+          (click)="submitArtwork()"
+          [disabled]="isLoading || uploadForm.invalid || selectedGenres.length === 0">
+          @if (isLoading) {
             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             Subiendo...
           } @else {
@@ -171,8 +171,8 @@
   </div>
 </div>
 
-<!-- Backdrop del modal -->
-@if (mostrarModal) {
-  <div class="modal-backdrop fade show" (click)="cerrarModal()"></div>
+<!-- Modal backdrop -->
+@if (isModalVisible) {
+  <div class="modal-backdrop fade show" (click)="closeModal()"></div>
 }
 

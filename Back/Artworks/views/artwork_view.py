@@ -12,24 +12,19 @@ from Artworks.serializers import GenreSerializer
 
 
 class GenreSearchView(APIView):
-    """
-    GET: Obtener géneros, opcionalmente filtrados por búsqueda
-    Parámetros query:
-    - search: término de búsqueda (opcional)
-    """
+    """GET: Return genres, optionally filtered by search term."""
     permission_classes = [AllowAny]
     
     def get(self, request):
         search = request.query_params.get('search', '').strip()
         
-        generos = Genre.objects.all()
+        genres = Genre.objects.all()
         
         if search:
-            generos = generos.filter(nombre__icontains=search)
+            genres = genres.filter(name__icontains=search)
         
-        generos = generos[:50]  # Máximo 50 resultados
-        
-        serializer = GenreSerializer(generos, many=True)
+        genres = genres[:50]
+        serializer = GenreSerializer(genres, many=True)
         
         return Response({
             'success': True,
@@ -39,10 +34,7 @@ class GenreSearchView(APIView):
 
 
 class ArtworkCreateView(APIView):
-    """
-    POST: Crear una nueva obra
-    Requiere autenticación
-    """
+    """POST: Create a new artwork (auth required)."""
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
@@ -53,23 +45,23 @@ class ArtworkCreateView(APIView):
         
         if serializer.is_valid():
             try:
-                # Crear la obra asociándola al usuario actual
-                artwork = serializer.save(autor=request.user)
+                # Create artwork for current user
+                artwork = serializer.save(author=request.user)
                 
-                # Si hay géneros, asociarlos
-                if 'generos' in request.data:
-                    generos = request.data.get('generos', [])
-                    if isinstance(generos, str):
-                        generos = [generos]
-                    artwork.generos.set(generos)
+                # Attach genres if provided
+                if 'genres' in request.data:
+                    genres = request.data.get('genres', [])
+                    if isinstance(genres, str):
+                        genres = [genres]
+                    artwork.genres.set(genres)
                 
                 from Artworks.serializers import ArtworkSerializer
-                resultado = ArtworkSerializer(artwork, context={'request': request})
+                result = ArtworkSerializer(artwork, context={'request': request})
                 
                 return Response({
                     'success': True,
                     'message': '¡Obra subida exitosamente!',
-                    'artwork': resultado.data
+                    'artwork': result.data
                 }, status=status.HTTP_201_CREATED)
                 
             except Exception as e:
@@ -85,11 +77,7 @@ class ArtworkCreateView(APIView):
 
 
 class ArtworkListView(APIView):
-    """
-    GET: Obtener todas las obras o filtrar por usuario
-    Parámetros query:
-    - user: username del usuario (opcional)
-    """
+    """GET: Return all artworks or filter by username."""
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -104,7 +92,7 @@ class ArtworkListView(APIView):
         if username:
             try:
                 user = CustomUser.objects.get(username=username)
-                artworks = artworks.filter(autor=user)
+                artworks = artworks.filter(author=user)
             except CustomUser.DoesNotExist:
                 return Response({
                     'success': False,
@@ -121,9 +109,7 @@ class ArtworkListView(APIView):
 
 
 class ArtworkDetailView(APIView):
-    """
-    GET: Obtener detalles de una obra específica
-    """
+    """GET: Return a single artwork by id."""
     permission_classes = [AllowAny]
     
     def get(self, request, artwork_id):
@@ -132,9 +118,9 @@ class ArtworkDetailView(APIView):
         
         try:
             artwork = Artwork.objects.get(id=artwork_id)
-            # Incrementar vistas
-            artwork.vistas += 1
-            artwork.save(update_fields=['vistas'])
+            # Increment view count
+            artwork.view_count += 1
+            artwork.save(update_fields=['view_count'])
             
             serializer = ArtworkSerializer(artwork, context={'request': request})
             
@@ -151,9 +137,7 @@ class ArtworkDetailView(APIView):
 
 
 class ArtworkDeleteView(APIView):
-    """
-    DELETE: Eliminar una obra (solo el autor)
-    """
+    """DELETE: Remove an artwork (author only)."""
     permission_classes = [IsAuthenticated]
     
     def delete(self, request, artwork_id):
@@ -162,8 +146,8 @@ class ArtworkDeleteView(APIView):
         try:
             artwork = Artwork.objects.get(id=artwork_id)
             
-            # Verificar que es el autor
-            if artwork.autor != request.user:
+            # Ensure the requester is the author
+            if artwork.author != request.user:
                 return Response({
                     'success': False,
                     'error': 'No tienes permiso para eliminar esta obra'
@@ -184,11 +168,7 @@ class ArtworkDeleteView(APIView):
 
 
 class FeaturedArtworksView(APIView):
-    """
-    GET: Obtener obras destacadas (más likes en los últimos 7 días)
-    Parámetro query:
-    - limit: cantidad de obras (default 10)
-    """
+    """GET: Return featured artworks (most likes in last 7 days)."""
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -197,13 +177,11 @@ class FeaturedArtworksView(APIView):
         
         limit = int(request.query_params.get('limit', 10))
         
-        # Últimos 7 días
-        una_semana_atras = timezone.now() - timedelta(days=7)
+        last_week = timezone.now() - timedelta(days=7)
         
-        # Obtener obras con más likes en la última semana
         artworks = Artwork.objects.annotate(
-            likes_semana=Count('user_likes', filter=Q(user_likes__fecha_creacion__gte=una_semana_atras))
-        ).order_by('-likes_semana', '-fecha_creacion')[:limit]
+            likes_week=Count('user_likes', filter=Q(user_likes__created_at__gte=last_week))
+        ).order_by('-likes_week', '-created_at')[:limit]
         
         serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
         
@@ -215,11 +193,7 @@ class FeaturedArtworksView(APIView):
 
 
 class RecentArtworksView(APIView):
-    """
-    GET: Obtener obras más recientes
-    Parámetro query:
-    - limit: cantidad de obras (default 10)
-    """
+    """GET: Return most recent artworks."""
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -228,7 +202,7 @@ class RecentArtworksView(APIView):
         
         limit = int(request.query_params.get('limit', 10))
         
-        artworks = Artwork.objects.all().order_by('-fecha_creacion')[:limit]
+        artworks = Artwork.objects.all().order_by('-created_at')[:limit]
         
         serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
         
@@ -240,13 +214,7 @@ class RecentArtworksView(APIView):
 
 
 class ArtworksByGenreView(APIView):
-    """
-    GET: Obtener obras por género
-    Parámetro path:
-    - genre_id: ID del género
-    Parámetro query:
-    - limit: cantidad de obras (default 10)
-    """
+    """GET: Return artworks by genre id."""
     permission_classes = [AllowAny]
     
     def get(self, request, genre_id):
@@ -257,13 +225,13 @@ class ArtworksByGenreView(APIView):
         
         try:
             genre = Genre.objects.get(id=genre_id)
-            artworks = Artwork.objects.filter(generos=genre).order_by('-fecha_creacion')[:limit]
+            artworks = Artwork.objects.filter(genres=genre).order_by('-created_at')[:limit]
             
             serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
             
             return Response({
                 'success': True,
-                'genre': genre.nombre,
+                'genre': genre.name,
                 'count': len(serializer.data),
                 'artworks': serializer.data
             }, status=status.HTTP_200_OK)

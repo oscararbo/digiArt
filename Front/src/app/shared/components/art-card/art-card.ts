@@ -20,7 +20,7 @@ export class ArtCard implements OnInit {
     author?: string;
     imageUrl?: string;
     liked?: boolean;
-    likes?: number;
+    likeCount?: number;
   } | any = {};
 
   @Input() userId?: string | number | null = null;
@@ -145,7 +145,7 @@ export class ArtCard implements OnInit {
       }
       // Compute new liked state from server response
       const nowLiked = res.action === 'add' || res.action === 'liked' || (res.success && (res.action === undefined) ? (res.likes > 0) : false);
-      const updated = { ...(this.data as any), likes: res.likes ?? this.data.likes, liked: !!nowLiked };
+      const updated = { ...(this.data as any), likeCount: res.likes ?? this.data.likeCount, liked: !!nowLiked };
 
       // First, update the per-artwork/global signals so all card instances reflect the new artwork state immediately
       try {

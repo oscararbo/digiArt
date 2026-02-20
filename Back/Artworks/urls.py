@@ -14,7 +14,7 @@ from Artworks.views import (
 )
 
 urlpatterns = [
-    # Géneros
+    # Genres
     path('genres/', GenreSearchView.as_view(), name='genre-search'),
     
     # Artworks
@@ -23,7 +23,7 @@ urlpatterns = [
     path('artworks/<uuid:artwork_id>/', ArtworkDetailView.as_view(), name='artwork-detail'),
     path('artworks/<uuid:artwork_id>/delete/', ArtworkDeleteView.as_view(), name='artwork-delete'),
     
-    # Featured & Recent
+    # Featured & recent
     path('artworks/featured/', FeaturedArtworksView.as_view(), name='featured-artworks'),
     path('artworks/recent/', RecentArtworksView.as_view(), name='recent-artworks'),
     path('artworks/genre/<int:genre_id>/', ArtworksByGenreView.as_view(), name='artworks-by-genre'),

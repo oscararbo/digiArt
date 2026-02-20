@@ -8,18 +8,15 @@ from Artworks.serializers import ArtworkSerializer
 
 
 class UserArtworksView(APIView):
-    """Obtener obras personales (subidas) de un usuario"""
+    """Get artworks uploaded by a user."""
     permission_classes = [AllowAny]
 
     def get(self, request, user_id):
         try:
-            # Verificar que el usuario existe
             user = CustomUser.objects.get(id=user_id)
             
-            # Obtener todas las obras del usuario
-            artworks = Artwork.objects.filter(autor=user).order_by('-fecha_creacion')
+            artworks = Artwork.objects.filter(author=user).order_by('-created_at')
             
-            # Serializar las obras
             serializer = ArtworkSerializer(artworks, many=True, context={'request': request})
             
             return Response({

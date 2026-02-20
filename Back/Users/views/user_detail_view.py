@@ -7,7 +7,7 @@ from Users.serializers import UserProfileSerializer
 
 
 class UserDetailView(APIView):
-    """Obtener perfil de usuario por username"""
+    """Get a user profile by username."""
     permission_classes = [AllowAny]
 
     def get(self, request, username):

@@ -5,18 +5,18 @@ import { BehaviorSubject, Observable } from 'rxjs';
     providedIn: 'root'
 })
 export class UploadArtModalService {
-    private mostrarModalSubject = new BehaviorSubject<boolean>(false);
-    public mostrarModal$: Observable<boolean> = this.mostrarModalSubject.asObservable();
+    private isModalOpenSubject = new BehaviorSubject<boolean>(false);
+    public isModalOpen$: Observable<boolean> = this.isModalOpenSubject.asObservable();
 
-    abrirModal() {
-        this.mostrarModalSubject.next(true);
+    openModal() {
+        this.isModalOpenSubject.next(true);
     }
 
-    cerrarModal() {
-        this.mostrarModalSubject.next(false);
+    closeModal() {
+        this.isModalOpenSubject.next(false);
     }
 
-    estaAbierto(): boolean {
-        return this.mostrarModalSubject.value;
+    isOpen(): boolean {
+        return this.isModalOpenSubject.value;
     }
 }

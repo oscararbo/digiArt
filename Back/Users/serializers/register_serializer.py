@@ -6,11 +6,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, allow_blank=False, allow_null=False, max_length=100)
     username = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=50)
     password = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6, write_only=True)
-    password_repeat = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6, write_only=True)
+    password_confirm = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6, write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'username', 'password', 'password_repeat')
+        fields = ('email', 'username', 'password', 'password_confirm')
 
     def validate_email(self, email):
         if "@" not in email:
@@ -40,15 +40,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         password = attrs.get('password')
-        password_repeat = attrs.get('password_repeat')
+        password_confirm = attrs.get('password_confirm')
 
-        if password != password_repeat:
+        if password != password_confirm:
             raise serializers.ValidationError("Las contraseñas no coinciden")
 
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('password_repeat')
+        validated_data.pop('password_confirm')
         password = validated_data.pop('password')
 
         user = CustomUser.objects.create(**validated_data)

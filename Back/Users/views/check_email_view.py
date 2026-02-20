@@ -7,11 +7,7 @@ from Users.models import CustomUser
 
 
 class CheckEmailView(APIView):
-    """
-    GET: Verificar si un email está disponible
-    Parámetros query:
-    - email: correo a verificar (obligatorio)
-    """
+    """GET: Check whether an email is available."""
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -23,9 +19,10 @@ class CheckEmailView(APIView):
                 'error': 'Email requerido'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        existe = CustomUser.objects.filter(email=email).exists()
+        exists = CustomUser.objects.filter(email=email).exists()
         
         return Response({
-            'disponible': not existe,
+            'success': True,
+            'available': not exists,
             'email': email
         }, status=status.HTTP_200_OK)

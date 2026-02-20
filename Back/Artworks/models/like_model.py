@@ -3,7 +3,7 @@ from django.conf import settings
 
 
 class Like(models.Model):
-    """Modelo para rastrear los likes en las obras de arte"""
+    """Like relation for artworks."""
     
     artwork = models.ForeignKey(
         'Artwork',
@@ -13,22 +13,23 @@ class Like(models.Model):
         null=False
     )
     
-    usuario = models.ForeignKey(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='likes',
         blank=False,
-        null=False
+        null=False,
+        db_column='usuario_id'
     )
     
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
     
     class Meta:
         db_table = 'likes'
-        unique_together = ('artwork', 'usuario',)
-        ordering = ['-fecha_creacion']
+        unique_together = ('artwork', 'user',)
+        ordering = ['-created_at']
         verbose_name = 'Like'
         verbose_name_plural = 'Likes'
         
     def __str__(self):
-        return f"{self.usuario.username} liked {self.artwork.titulo}"
+        return f"{self.user.username} liked {self.artwork.title}"

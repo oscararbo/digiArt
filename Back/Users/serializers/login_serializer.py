@@ -23,7 +23,7 @@ class LoginSerializer(serializers.Serializer):
         if "@" not in email:
             raise serializers.ValidationError("Email o contraseña incorrecta")
 
-        # Buscar el usuario
+        # Look up the user
         user = CustomUser.objects.filter(email=email).first()
 
         if not user:

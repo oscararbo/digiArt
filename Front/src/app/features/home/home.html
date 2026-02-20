@@ -1,9 +1,9 @@
 <div class="home-container">
-    <!-- Barra de búsqueda y filtros -->
-    <div class="search-section" [class.collapsed]="searchSectionCollapsed">
-        <!-- Botón Toggle -->
+    <!-- Search and filters -->
+    <div class="search-section" [class.collapsed]="isSearchSectionCollapsed">
+        <!-- Toggle button -->
         <button class="btn-toggle-search" (click)="toggleSearchSection()" title="Mostrar/Ocultar filtros">
-            <i class="bi" [class.bi-chevron-up]="!searchSectionCollapsed" [class.bi-chevron-down]="searchSectionCollapsed"></i>
+            <i class="bi" [class.bi-chevron-up]="!isSearchSectionCollapsed" [class.bi-chevron-down]="isSearchSectionCollapsed"></i>
         </button>
 
         <div class="search-container">
@@ -11,35 +11,35 @@
                 <i class="bi bi-search"></i>
                 <input 
                     type="text" 
-                    [(ngModel)]="busquedaTermino" 
+                    [(ngModel)]="searchTerm" 
                     placeholder="Buscar obras, artistas, géneros..."
-                    (keyup.enter)="realizarBusqueda()"
+                    (keyup.enter)="runSearch()"
                     class="search-input">
-                <button class="btn-search" (click)="realizarBusqueda()" [disabled]="cargandoBusqueda">
-                    <ng-container *ngIf="cargandoBusqueda">
+                <button class="btn-search" (click)="runSearch()" [disabled]="isSearchLoading">
+                    <ng-container *ngIf="isSearchLoading">
                         <span class="spinner-border spinner-border-sm"></span>
                     </ng-container>
-                    <ng-container *ngIf="!cargandoBusqueda">Buscar</ng-container>
+                    <ng-container *ngIf="!isSearchLoading">Buscar</ng-container>
                 </button>
                 <button class="btn-profile" routerLink="/profile" title="Mi Perfil">
                     <i class="bi bi-person-circle"></i>
                 </button>
             </div>
-            <div *ngIf="!searchSectionCollapsed" class="filters-section">
+            <div *ngIf="!isSearchSectionCollapsed" class="filters-section">
                 <div class="filter-group">
                     <label class="filter-label">Filtrar por género:</label>
                     <div class="genre-tags">
                         <button 
                             class="tag-filter" 
-                            [class.active]="generoSeleccionado === null"
-                            (click)="limpiarBusqueda()">
+                            [class.active]="selectedGenreId === null"
+                            (click)="clearSearch()">
                             Todos
                         </button>
-                        <button *ngFor="let genero of todosGeneros()" 
+                        <button *ngFor="let genre of allGenres()" 
                                 class="tag-filter" 
-                                [class.active]="generoSeleccionado === genero.id"
-                                (click)="cambiarGeneroFiltro(genero.id)">
-                            {{ genero.nombre }}
+                                [class.active]="selectedGenreId === genre.id"
+                                (click)="setGenreFilter(genre.id)">
+                            {{ genre.name }}
                         </button>
                     </div>
                 </div>
@@ -49,14 +49,14 @@
                     <div class="order-buttons">
                         <button 
                             class="order-btn"
-                            [class.active]="ordenarPor === 'reciente'"
-                            (click)="cambiarOrden('reciente')">
+                            [class.active]="sortBy === 'recent'"
+                            (click)="setSortBy('recent')">
                             <i class="bi bi-clock"></i> Recientes
                         </button>
                         <button 
                             class="order-btn"
-                            [class.active]="ordenarPor === 'populares'"
-                            (click)="cambiarOrden('populares')">
+                            [class.active]="sortBy === 'popular'"
+                            (click)="setSortBy('popular')">
                             <i class="bi bi-heart"></i> Populares
                         </button>
                     </div>
@@ -66,35 +66,35 @@
     </div>
     
 
-    <!-- Resultados de búsqueda -->
-    <div *ngIf="mostrandoBusqueda" class="search-results-section">
+    <!-- Search results -->
+    <div *ngIf="isSearching" class="search-results-section">
             <div class="results-container">
                 <div class="results-header">
                     <h2>Resultados de búsqueda</h2>
-                    <button class="btn-clear-search" (click)="limpiarBusqueda()">
+                    <button class="btn-clear-search" (click)="clearSearch()">
                         <i class="bi bi-x-lg"></i> Limpiar búsqueda
                     </button>
                 </div>
 
-                <div *ngIf="resultadosBusqueda().length > 0; else noResults" class="results-grid">
-                    <div *ngFor="let obra of resultadosBusqueda()" class="result-item">
+                <div *ngIf="searchResults().length > 0; else noResults" class="results-grid">
+                    <div *ngFor="let artwork of searchResults()" class="result-item">
                         <app-art-card 
                             [data]="{ 
-                                id: obra.id, 
-                                title: obra.titulo, 
-                                author: obra.autor_username, 
-                                imageUrl: obra.imageUrl 
+                                id: artwork.id, 
+                                title: artwork.title, 
+                                author: artwork.authorUsername, 
+                                imageUrl: artwork.imageUrl 
                             }">
                         </app-art-card>
                         <div class="result-stats">
                             <span class="stat">
-                                <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                <i class="bi bi-eye"></i> {{ artwork.viewCount }}
                             </span>
                             <button 
                                 class="stat like-btn"
-                                (click)="toggleLike(obra)"
-                                [class.liked]="obra.likes > 0">
-                                <i class="bi bi-heart"></i> {{ obra.likes }}
+                                (click)="toggleLike(artwork)"
+                                [class.liked]="artwork.likeCount > 0">
+                                <i class="bi bi-heart"></i> {{ artwork.likeCount }}
                             </button>
                         </div>
                     </div>
@@ -107,25 +107,25 @@
                 </ng-template>
             </div>
         </div>
-    <div *ngIf="!mostrandoBusqueda" class="sections-container">
-        <div *ngFor="let seccion of secciones()" class="section">
+    <div *ngIf="!isSearching" class="sections-container">
+        <div *ngFor="let section of sections()" class="section">
             <div class="section-header">
-                <h2 class="section-title">{{ seccion.titulo }}</h2>
-                <button class="btn-ver-mas" (click)="abrirModal(seccion)">
+                <h2 class="section-title">{{ section.title }}</h2>
+                <button class="btn-ver-mas" (click)="openModal(section)">
                     Ver más <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
 
-            <!-- Filas deslizables con 10 cards -->
+            <!-- Scrollable rows with 10 cards -->
             <div class="artworks-scroll">
-                <div *ngIf="seccion.obras && seccion.obras.length > 0; else noArtworks">
+                <div *ngIf="section.artworks && section.artworks.length > 0; else noArtworks">
                     <div class="artworks-row">
-                        <div *ngFor="let obra of seccion.obras" class="artwork-card-wrapper">
+                        <div *ngFor="let artwork of section.artworks" class="artwork-card-wrapper">
                             <app-art-card [data]="{ 
-                                id: obra.id, 
-                                title: obra.titulo, 
-                                author: obra.autor_username, 
-                                imageUrl: obra.imageUrl 
+                                id: artwork.id, 
+                                title: artwork.title, 
+                                author: artwork.authorUsername, 
+                                imageUrl: artwork.imageUrl 
                             }"></app-art-card>
                         </div>
                     </div>
@@ -137,24 +137,24 @@
         </div>
     </div>
 
-        <!-- Modal para Ver más -->
-        <div *ngIf="modalActiva && modalSeccion" class="modal-overlay" (click)="cerrarModal()">
+        <!-- Modal for section details -->
+        <div *ngIf="isModalOpen && modalSection" class="modal-overlay" (click)="closeModal()">
             <div class="modal-content" (click)="$event.stopPropagation()">
                 <div class="modal-header">
-                    <h2 class="modal-title">{{ modalSeccion.titulo }}</h2>
-                    <button class="btn-close-modal" (click)="cerrarModal()">
+                    <h2 class="modal-title">{{ modalSection.title }}</h2>
+                    <button class="btn-close-modal" (click)="closeModal()">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
 
-                <!-- Grid de 3 columnas con 30 obras -->
-                <div *ngIf="obrasPaginadas().length > 0; else noModalArtworks" class="modal-grid">
-                    <div *ngFor="let obra of obrasPaginadas()" class="grid-item">
+                <!-- 3-column grid with 30 artworks -->
+                <div *ngIf="pagedArtworks().length > 0; else noModalArtworks" class="modal-grid">
+                    <div *ngFor="let artwork of pagedArtworks()" class="grid-item">
                         <app-art-card [data]="{ 
-                            id: obra.id, 
-                            title: obra.titulo, 
-                            author: obra.autor_username, 
-                            imageUrl: obra.imageUrl 
+                            id: artwork.id, 
+                            title: artwork.title, 
+                            author: artwork.authorUsername, 
+                            imageUrl: artwork.imageUrl 
                         }"></app-art-card>
                     </div>
                 </div>
@@ -164,9 +164,9 @@
             </div>
         </div>
 
-    <!-- Botón flotante de upload -->
+    <!-- Upload button -->
     <app-upload-button></app-upload-button>
 
-    <!-- Modal de upload (siempre cargado) -->
+    <!-- Upload modal (always mounted) -->
     <app-upload-art-form></app-upload-art-form>
 </div>

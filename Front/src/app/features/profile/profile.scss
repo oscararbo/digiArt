@@ -370,10 +370,10 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
+}
 
-    .profile-main:has(.sidebar-collapsed) & {
-        grid-template-columns: repeat(6, 1fr);
-    }
+.profile-container.sidebar-collapsed .artworks-row {
+    grid-template-columns: repeat(6, 1fr);
 }
 
 .artwork-card-wrapper {

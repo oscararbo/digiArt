@@ -6,7 +6,7 @@ from Users.serializers import UserProfileSerializer, UserProfileUpdateSerializer
 
 
 class UserUpdateView(APIView):
-    """Actualizar perfil del usuario autenticado"""
+    """Update the authenticated user's profile."""
     permission_classes = [IsAuthenticated]
 
     def put(self, request):

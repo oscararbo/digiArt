@@ -13,14 +13,14 @@ export class UploadButton {
     private uploadModalService = inject(UploadModalService);
     private loginPopupService = inject(LoginPopupService);
 
-    abrirModal() {
+    openModal() {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            // abrir pop-up que pide login
+            // Open the login prompt if the user is not authenticated.
             this.loginPopupService.open();
             return;
         }
-        this.uploadModalService.abrirModal();
+        this.uploadModalService.openModal();
     }
 
     onMouseEnter() {

@@ -1,21 +1,21 @@
-<div class="profile-container" [class.sidebar-collapsed]="sidebarCollapsed()">
+<div class="profile-container" [class.sidebar-collapsed]="isSidebarCollapsed()">
     <!-- Sidebar: User Profile Info (33% or collapsed) -->
-    <aside class="profile-sidebar" [class.collapsed]="sidebarCollapsed()">
+    <aside class="profile-sidebar" [class.collapsed]="isSidebarCollapsed()">
         <div class="sidebar-content">
             <!-- Profile Picture -->
             <div class="profile-avatar">
-                <img *ngIf="userProfile()?.imagen_perfil" 
-                     [src]="userProfile()?.imagen_perfil" 
+                 <img *ngIf="userProfile()?.profile_image" 
+                     [src]="userProfile()?.profile_image" 
                      [alt]="userProfile()?.username"
                      class="avatar-image">
-                <i *ngIf="!userProfile()?.imagen_perfil" class="bi bi-person-circle"></i>
+                 <i *ngIf="!userProfile()?.profile_image" class="bi bi-person-circle"></i>
             </div>
 
             <!-- Username and Description -->
             <div class="profile-info">
                 <h2 class="profile-username">{{ userProfile()?.username }}</h2>
                 <p class="profile-description" *ngIf="!isEditingProfile()">
-                    {{ userProfile()?.descripcion || 'Sin descripción' }}
+                    {{ userProfile()?.description || 'Sin descripción' }}
                 </p>
             </div>
 
@@ -29,16 +29,20 @@
 
                 <!-- Edit Form -->
                 <div *ngIf="isEditingProfile()" class="edit-form">
+                    <div *ngIf="profileMessage()" class="mb-3">
+                        <div class="alert alert-danger" role="alert">{{ profileMessage() }}</div>
+                    </div>
                     <div class="form-group">
                         <label>Nombre de usuario</label>
                         <input 
                             type="text" 
                             [(ngModel)]="editingUsername"
                             (blur)="checkUsername()"
+                            (input)="checkUsername()"
                             class="form-control"
-                            [class.is-invalid]="usernameExists()">
-                        <small *ngIf="usernameExists()" class="text-danger">
-                            Este nombre de usuario ya existe
+                            [class.is-invalid]="isUsernameTaken()">
+                        <small *ngIf="isUsernameTaken()" class="text-danger">
+                            Este nombre de usuario ya esta en uso
                         </small>
                     </div>
 
@@ -54,7 +58,7 @@
                     <div class="form-actions">
                         <button class="btn btn-save" 
                                 (click)="saveProfileChanges()"
-                                [disabled]="usernameExists() || editingUsername().trim().length === 0">
+                                [disabled]="isUsernameTaken() || savingProfile() || editingUsername().trim().length === 0">
                             Guardar
                         </button>
                         <button class="btn btn-cancel" (click)="cancelEditingProfile()">
@@ -69,8 +73,8 @@
         <button class="btn-collapse-sidebar" 
                 (click)="toggleSidebarCollapsed()"
                 title="Colapsar/Expandir" 
-                [class.collapsed]="sidebarCollapsed()">
-            <i class="bi" [class.bi-chevron-left]="!sidebarCollapsed()" [class.bi-chevron-right]="sidebarCollapsed()"></i>
+                [class.collapsed]="isSidebarCollapsed()">
+            <i class="bi" [class.bi-chevron-left]="!isSidebarCollapsed()" [class.bi-chevron-right]="isSidebarCollapsed()"></i>
         </button>
     </aside>
 
@@ -83,14 +87,14 @@
                     <h3 class="section-title" (click)="toggleFavorites()">
                         <i class="bi bi-heart"></i> Obras Favoritas
                     </h3>
-                    <button class="btn-toggle-section" (click)="toggleFavorites()" 
-                            [class.expanded]="favoritesExpanded()">
+                        <button class="btn-toggle-section" (click)="toggleFavorites()" 
+                            [class.expanded]="isFavoritesExpanded()">
                         <i class="bi bi-chevron-down"></i>
                     </button>
                 </div>
                 
                 <input 
-                    *ngIf="favoritesExpanded()"
+                    *ngIf="isFavoritesExpanded()"
                     type="text" 
                     [(ngModel)]="favoritesSearchTerm"
                     placeholder="Buscar por título, autor o género..."
@@ -98,23 +102,23 @@
             </div>
 
             <!-- Artworks Grid -->
-            <div *ngIf="favoritesExpanded()" class="artworks-grid">
+            <div *ngIf="isFavoritesExpanded()" class="artworks-grid">
                 <div *ngIf="filteredLikedArtworks.length > 0; else noFavorites">
                     <div *ngFor="let row of likedArtworksRows" class="artworks-row">
                         <div *ngFor="let obra of row" class="artwork-card-wrapper">
                             <app-art-card [data]="{ 
                                 id: obra.id, 
-                                title: obra.titulo, 
-                                author: obra.autor_username, 
+                                title: obra.title, 
+                                author: obra.authorUsername, 
                                 imageUrl: obra.imageUrl,
-                                likes: obra.likes
+                                likes: obra.likeCount
                             }"></app-art-card>
                             <div class="artwork-stats">
                                 <span class="stat">
-                                    <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                    <i class="bi bi-eye"></i> {{ obra.viewCount }}
                                 </span>
                                 <span class="stat">
-                                    <i class="bi bi-heart"></i> {{ obra.likes }}
+                                    <i class="bi bi-heart"></i> {{ obra.likeCount }}
                                 </span>
                             </div>
                         </div>
@@ -136,14 +140,14 @@
                     <h3 class="section-title" (click)="togglePersonal()">
                         <i class="bi bi-palette"></i> Obras Personales
                     </h3>
-                    <button class="btn-toggle-section" (click)="togglePersonal()" 
-                            [class.expanded]="personalExpanded()">
+                        <button class="btn-toggle-section" (click)="togglePersonal()" 
+                            [class.expanded]="isPersonalExpanded()">
                         <i class="bi bi-chevron-down"></i>
                     </button>
                 </div>
                 
                 <input 
-                    *ngIf="personalExpanded()"
+                    *ngIf="isPersonalExpanded()"
                     type="text" 
                     [(ngModel)]="personalSearchTerm"
                     placeholder="Buscar por título, autor o género..."
@@ -151,23 +155,23 @@
             </div>
 
             <!-- Artworks Grid -->
-            <div *ngIf="personalExpanded()" class="artworks-grid">
+            <div *ngIf="isPersonalExpanded()" class="artworks-grid">
                 <div *ngIf="filteredPersonalArtworks.length > 0; else noPersonal">
                     <div *ngFor="let row of personalArtworksRows" class="artworks-row">
                         <div *ngFor="let obra of row" class="artwork-card-wrapper">
                             <app-art-card [data]="{ 
                                 id: obra.id, 
-                                title: obra.titulo, 
-                                author: obra.autor_username, 
+                                title: obra.title, 
+                                author: obra.authorUsername, 
                                 imageUrl: obra.imageUrl,
-                                likes: obra.likes
+                                likes: obra.likeCount
                             }"></app-art-card>
                             <div class="artwork-stats">
                                 <span class="stat">
-                                    <i class="bi bi-eye"></i> {{ obra.vistas }}
+                                    <i class="bi bi-eye"></i> {{ obra.viewCount }}
                                 </span>
                                 <span class="stat">
-                                    <i class="bi bi-heart"></i> {{ obra.likes }}
+                                    <i class="bi bi-heart"></i> {{ obra.likeCount }}
                                 </span>
                             </div>
                         </div>

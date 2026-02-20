@@ -5,24 +5,24 @@ import { BehaviorSubject } from 'rxjs';
     providedIn: 'root'
 })
 export class UploadModalService {
-    private modalAbierto$ = new BehaviorSubject<boolean>(false);
-    public modalAbierto = this.modalAbierto$.asObservable();
+    private isModalOpenSubject = new BehaviorSubject<boolean>(false);
+    public isModalOpen$ = this.isModalOpenSubject.asObservable();
 
     constructor() {}
 
-    abrirModal() {
-        this.modalAbierto$.next(true);
+    openModal() {
+        this.isModalOpenSubject.next(true);
     }
 
-    cerrarModal() {
-        this.modalAbierto$.next(false);
+    closeModal() {
+        this.isModalOpenSubject.next(false);
     }
 
     toggle() {
-        this.modalAbierto$.next(!this.modalAbierto$.value);
+        this.isModalOpenSubject.next(!this.isModalOpenSubject.value);
     }
 
-    obtenerEstado(): boolean {
-        return this.modalAbierto$.value;
+    isOpen(): boolean {
+        return this.isModalOpenSubject.value;
     }
 }

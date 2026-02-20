@@ -1,28 +1,29 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, CommonModule } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
 import { Router } from '@angular/router';
 import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, NgClass],
+  imports: [ReactiveFormsModule, NgClass, CommonModule],
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
   standalone: true,
 })
 export class Register {
   registerForm: FormGroup;
-  cargando: boolean = false;
-  mostrarErrores: boolean = false;
-  emailDisponible: boolean | null = null;
-  verificandoEmail: boolean = false;
-  usernameDisponible: boolean | null = null;
-  verificandoUsername: boolean = false;
+  isLoading: boolean = false;
+  showErrors: boolean = false;
+  isEmailAvailable: boolean | null = null;
+  isCheckingEmail: boolean = false;
+  isUsernameAvailable: boolean | null = null;
+  isCheckingUsername: boolean = false;
+  errorMessage = signal<string | null>(null);
 
-  private emailTimeout: any;
-  private usernameTimeout: any;
+  private emailCheckTimeout: any;
+  private usernameCheckTimeout: any;
   private tokenRefreshService = inject(TokenRefreshService);
 
   constructor(private formBuilder: FormBuilder, private router: Router) {
@@ -30,7 +31,7 @@ export class Register {
       email: ['', [Validators.required, emailValidator()]],
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
       password: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
-      passwordRepeat: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
+      passwordConfirm: ['', [Validators.required, Validators.minLength(6), passwordValidator()]],
     });
   }
 
@@ -47,29 +48,29 @@ export class Register {
    * This function is called on input with a debounce of 1 second.
    * @returns 
    */
-  verificarEmail() {
+  checkEmailAvailability() {
     const email = this.registerForm.get('email')?.value?.trim();
 
     if (!email || this.registerForm.get('email')?.hasError('required') || this.registerForm.get('email')?.hasError('invalidEmail')) {
-      this.emailDisponible = null;
+      this.isEmailAvailable = null;
       return;
     }
 
-    if (this.emailTimeout) {
-      clearTimeout(this.emailTimeout);
+    if (this.emailCheckTimeout) {
+      clearTimeout(this.emailCheckTimeout);
     }
 
-    this.emailTimeout = setTimeout(async () => {
-      this.verificandoEmail = true;
+    this.emailCheckTimeout = setTimeout(async () => {
+      this.isCheckingEmail = true;
       try {
         const response = await fetch(`http://127.0.0.1:8000/api/auth/check-email/?email=${encodeURIComponent(email)}`);
         const data = await response.json();
-        this.emailDisponible = data.disponible;
+        this.isEmailAvailable = data.available;
       } catch (error) {
         console.error('Error verificando email:', error);
-        this.emailDisponible = null;
+        this.isEmailAvailable = null;
       } finally {
-        this.verificandoEmail = false;
+        this.isCheckingEmail = false;
         this.registerForm.get('email')?.markAsTouched();
       }
     }, 1000);
@@ -80,29 +81,29 @@ export class Register {
    * This function is called on input with a debounce of 1 second.
    * @returns 
    */
-  verificarUsername() {
+  checkUsernameAvailability() {
     const username = this.registerForm.get('username')?.value?.trim();
 
     if (!username || username.length < 3) {
-      this.usernameDisponible = null;
+      this.isUsernameAvailable = null;
       return;
     }
 
-    if (this.usernameTimeout) {
-      clearTimeout(this.usernameTimeout);
+    if (this.usernameCheckTimeout) {
+      clearTimeout(this.usernameCheckTimeout);
     }
 
-    this.usernameTimeout = setTimeout(async () => {
-      this.verificandoUsername = true;
+    this.usernameCheckTimeout = setTimeout(async () => {
+      this.isCheckingUsername = true;
       try {
         const response = await fetch(`http://127.0.0.1:8000/api/auth/check-username/?username=${encodeURIComponent(username)}`);
         const data = await response.json();
-        this.usernameDisponible = data.disponible;
+        this.isUsernameAvailable = data.available;
       } catch (error) {
         console.error('Error verificando username:', error);
-        this.usernameDisponible = null;
+        this.isUsernameAvailable = null;
       } finally {
-        this.verificandoUsername = false;
+        this.isCheckingUsername = false;
         this.registerForm.get('username')?.markAsTouched();
       }
     }, 1000);
@@ -113,37 +114,38 @@ export class Register {
    * It also performs client-side validation before making the API call.
    * @returns 
    */
-  async registrarme() {
-    this.mostrarErrores = true;
+  async register() {
+    this.showErrors = true;
+    this.errorMessage.set(null);
 
     if (this.registerForm.invalid) {
       return;
     }
 
-    if (this.emailDisponible === null) {
-      alert('Por favor, espera a que se verifique el correo electrónico');
+    if (this.isEmailAvailable === null) {
+      this.errorMessage.set('Por favor, espera a que se verifique el correo electrónico');
       return;
     }
 
-    if (this.emailDisponible === false) {
+    if (this.isEmailAvailable === false) {
       return;
     }
 
-    if (this.usernameDisponible === null) {
-      alert('Por favor, espera a que se verifique el nombre de usuario');
+    if (this.isUsernameAvailable === null) {
+      this.errorMessage.set('Por favor, espera a que se verifique el nombre de usuario');
       return;
     }
 
-    if (this.usernameDisponible === false) {
+    if (this.isUsernameAvailable === false) {
       return;
     }
 
-    if (this.registerForm.value.password !== this.registerForm.value.passwordRepeat) {
-      alert('Las contraseñas no coinciden');
+    if (this.registerForm.value.password !== this.registerForm.value.passwordConfirm) {
+      this.errorMessage.set('Las contraseñas no coinciden');
       return;
     }
 
-    this.cargando = true;
+    this.isLoading = true;
 
     try {
       const hashed = await this.hashPassword(this.registerForm.value.password);
@@ -156,7 +158,7 @@ export class Register {
           email: this.registerForm.value.email,
           username: this.registerForm.value.username,
           password: hashed,
-          password_repeat: hashed,
+          password_confirm: hashed,
         }),
       });
 
@@ -165,25 +167,24 @@ export class Register {
       if (!response.ok) {
         console.error('Errores del servidor:', data);
         const errors = data.errors || {};
-        const errorMessage = 
+        const errorMsg = 
           errors.email?.[0] || 
           errors.username?.[0] ||
           errors.password?.[0] || 
-          errors.password_repeat?.[0] || 
+          errors.password_confirm?.[0] || 
           data.error || 
           'Error desconocido';
-        alert('Error: ' + errorMessage);
+        this.errorMessage.set(errorMsg);
         return;
       }
 
-      // Login after successful registration
-      // After registration, log in using the same original credentials (iniciarSesion hashes them again)
-      await this.iniciarSesion(this.registerForm.value.email, this.registerForm.value.password);
+      // Login after successful registration using the original credentials
+      await this.loginAfterRegister(this.registerForm.value.email, this.registerForm.value.password);
     } catch (error) {
       console.error('Error en la solicitud:', error);
-      alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     } finally {
-      this.cargando = false;
+      this.isLoading = false;
     }
   }
 
@@ -192,7 +193,7 @@ export class Register {
    * It also performs client-side validation before making the API call.
    * @returns 
    */
-  private async iniciarSesion(email: string, password: string) {
+  private async loginAfterRegister(email: string, password: string) {
     try {
       const hashed = await this.hashPassword(password);
       const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
@@ -210,7 +211,8 @@ export class Register {
 
       if (!response.ok) {
         console.error('Errores del servidor:', data);
-        alert('Error: ' + (data.errors?.email?.[0] || data.errors?.password?.[0] || data.error || 'Error desconocido'));
+        const errorMsg = data.errors?.email?.[0] || data.errors?.password?.[0] || data.error || 'Error desconocido';
+        this.errorMessage.set(errorMsg);
         return;
       }
 
@@ -228,7 +230,7 @@ export class Register {
       this.router.navigate(['/home']);
     } catch (error) {
       console.error('Error en la solicitud de inicio de sesión:', error);
-      alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     }
   }
 }

@@ -5,16 +5,16 @@ from Users.models import CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
-    list_display = ('email', 'username', 'nombre', 'apellidos', 'is_active', 'is_staff', 'is_superuser')
-    list_filter = ('is_active', 'is_staff', 'is_superuser', 'fecha_creacion')
-    search_fields = ('email', 'username', 'nombre', 'apellidos')
-    ordering = ('-fecha_creacion',)
+    list_display = ('email', 'username', 'first_name', 'last_name', 'is_active', 'is_staff', 'is_superuser')
+    list_filter = ('is_active', 'is_staff', 'is_superuser', 'created_at')
+    search_fields = ('email', 'username', 'first_name', 'last_name')
+    ordering = ('-created_at',)
 
     fieldsets = (
         (None, {'fields': ('email', 'username', 'password')}),
-        ('Información Personal', {'fields': ('nombre', 'apellidos')}),
-        ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Fechas', {'fields': ('fecha_creacion', 'fecha_actualizacion')}),
+        ('Personal Information', {'fields': ('first_name', 'last_name')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Dates', {'fields': ('created_at', 'updated_at')}),
     )
 
     add_fieldsets = (
@@ -24,4 +24,4 @@ class CustomUserAdmin(BaseUserAdmin):
         }),
     )
 
-    readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
+    readonly_fields = ('created_at', 'updated_at')

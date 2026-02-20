@@ -25,8 +25,8 @@ class LoginView(APIView):
                     'id': user.id,
                     'email': user.email,
                     'username': user.username,
-                    'nombre': user.nombre,
-                    'apellidos': user.apellidos,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
                 }
             }, status=status.HTTP_200_OK)
         else:

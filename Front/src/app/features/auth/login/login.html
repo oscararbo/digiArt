@@ -3,8 +3,8 @@
     <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
   </div>
 
-  <div *ngIf="errorMessage" class="mb-3">
-    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+  <div *ngIf="errorMessage()" class="mb-3">
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
   </div>
 
   <div class="mb-5 mt-3 border-bottom">

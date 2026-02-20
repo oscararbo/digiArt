@@ -4,28 +4,28 @@ from Artworks.models import Genre, Artwork, Like
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'fecha_creacion')
-    search_fields = ('nombre',)
-    ordering = ('nombre',)
+    list_display = ('name', 'created_at')
+    search_fields = ('name',)
+    ordering = ('name',)
 
 
 @admin.register(Artwork)
 class ArtworkAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'autor', 'vistas', 'likes', 'fecha_creacion')
-    list_filter = ('fecha_creacion', 'generos')
-    search_fields = ('titulo', 'autor__username')
-    filter_horizontal = ('generos',)
-    readonly_fields = ('id', 'vistas', 'likes', 'fecha_creacion', 'fecha_actualizacion')
+    list_display = ('title', 'author', 'view_count', 'like_count', 'created_at')
+    list_filter = ('created_at', 'genres')
+    search_fields = ('title', 'author__username')
+    filter_horizontal = ('genres',)
+    readonly_fields = ('id', 'view_count', 'like_count', 'created_at', 'updated_at')
     
     fieldsets = (
-        ('Información de la Obra', {
-            'fields': ('id', 'titulo', 'descripcion', 'imagen')
+        ('Artwork Info', {
+            'fields': ('id', 'title', 'description', 'image')
         }),
-        ('Autor y Géneros', {
-            'fields': ('autor', 'generos')
+        ('Author and Genres', {
+            'fields': ('author', 'genres')
         }),
-        ('Metadatos', {
-            'fields': ('vistas', 'likes', 'fecha_creacion', 'fecha_actualizacion'),
+        ('Metadata', {
+            'fields': ('view_count', 'like_count', 'created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
@@ -33,7 +33,7 @@ class ArtworkAdmin(admin.ModelAdmin):
 
 @admin.register(Like)
 class LikeAdmin(admin.ModelAdmin):
-    list_display = ('usuario', 'artwork', 'fecha_creacion')
-    list_filter = ('fecha_creacion',)
-    search_fields = ('usuario__username', 'artwork__titulo')
-    readonly_fields = ('fecha_creacion',)
+    list_display = ('user', 'artwork', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'artwork__title')
+    readonly_fields = ('created_at',)

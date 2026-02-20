@@ -1,6 +1,10 @@
-<form [formGroup]="registerForm" (ngSubmit)="registrarme()" class="w-100">
+<form [formGroup]="registerForm" (ngSubmit)="register()" class="w-100">
   <div class="w-100 d-flex justify-content-center mb-3">
     <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
+  </div>
+
+  <div *ngIf="errorMessage()" class="mb-3">
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
   </div>
 
   <div class="mb-5 mt-3 border-bottom">
@@ -15,13 +19,13 @@
       class="form-control"
       id="emailInput"
       placeholder="name@example.com"
-      (input)="verificarEmail()"
+      (input)="checkEmailAvailability()"
       [ngClass]="{
-        'is-invalid': mostrarErrores && registerForm.get('email')?.touched && (registerForm.get('email')?.errors || emailDisponible === false),
-        'is-valid': mostrarErrores && registerForm.get('email')?.touched && !registerForm.get('email')?.errors && emailDisponible === true
+        'is-invalid': showErrors && registerForm.get('email')?.touched && (registerForm.get('email')?.errors || isEmailAvailable === false),
+        'is-valid': showErrors && registerForm.get('email')?.touched && !registerForm.get('email')?.errors && isEmailAvailable === true
       }">
     <label for="emailInput">Correo electrónico</label>
-    @if (mostrarErrores && registerForm.get('email')?.errors) {
+    @if (showErrors && registerForm.get('email')?.errors) {
       <div class="form-text text-danger small mt-1">
         @if (registerForm.get('email')?.hasError('required')) {
           Campo obligatorio
@@ -30,7 +34,7 @@
         }
       </div>
     }
-    @if (emailDisponible === false && !registerForm.get('email')?.errors) {
+    @if (isEmailAvailable === false && !registerForm.get('email')?.errors) {
       <div class="form-text text-danger small mt-1 ml-2">
         Este correo electrónico ya está en uso
       </div>
@@ -45,13 +49,13 @@
       class="form-control"
       id="usernameInput"
       placeholder="nombre_usuario"
-      (input)="verificarUsername()"
+      (input)="checkUsernameAvailability()"
       [ngClass]="{
-        'is-invalid': mostrarErrores && registerForm.get('username')?.touched && (registerForm.get('username')?.errors || usernameDisponible === false),
-        'is-valid': mostrarErrores && registerForm.get('username')?.touched && !registerForm.get('username')?.errors && usernameDisponible === true
+        'is-invalid': showErrors && registerForm.get('username')?.touched && (registerForm.get('username')?.errors || isUsernameAvailable === false),
+        'is-valid': showErrors && registerForm.get('username')?.touched && !registerForm.get('username')?.errors && isUsernameAvailable === true
       }">
     <label for="usernameInput">Nombre de usuario</label>
-    @if (mostrarErrores && registerForm.get('username')?.errors) {
+    @if (showErrors && registerForm.get('username')?.errors) {
       <div class="form-text text-danger small mt-1">
         @if (registerForm.get('username')?.hasError('required')) {
           Campo obligatorio
@@ -62,7 +66,7 @@
         }
       </div>
     }
-    @if (usernameDisponible === false && !registerForm.get('username')?.errors) {
+    @if (isUsernameAvailable === false && !registerForm.get('username')?.errors) {
       <div class="form-text text-danger small mt-1">
         Este nombre de usuario ya existe
       </div>
@@ -78,11 +82,11 @@
       id="passwordInput"
       placeholder="Password"
       [ngClass]="{
-        'is-invalid': mostrarErrores && registerForm.get('password')?.touched && registerForm.get('password')?.errors,
-        'is-valid': mostrarErrores && registerForm.get('password')?.touched && !registerForm.get('password')?.errors
+        'is-invalid': showErrors && registerForm.get('password')?.touched && registerForm.get('password')?.errors,
+        'is-valid': showErrors && registerForm.get('password')?.touched && !registerForm.get('password')?.errors
       }">
     <label for="passwordInput">Contraseña</label>
-      @if (mostrarErrores && registerForm.get('password')?.errors) {
+      @if (showErrors && registerForm.get('password')?.errors) {
         <div class="form-text text-danger small mt-1">
           @if (registerForm.get('password')?.hasError('required')) {
             Campo obligatorio
@@ -99,16 +103,16 @@
   <div class="form-floating mb-4">
     <input
       type="password"
-      formControlName="passwordRepeat"
+      formControlName="passwordConfirm"
       class="form-control"
       id="passwordRepeatInput"
       placeholder="Repeat Password"
       [ngClass]="{
-        'is-invalid': mostrarErrores && registerForm.get('passwordRepeat')?.touched && registerForm.get('passwordRepeat')?.errors,
-        'is-valid': mostrarErrores && registerForm.get('passwordRepeat')?.touched && !registerForm.get('passwordRepeat')?.errors
+        'is-invalid': showErrors && registerForm.get('passwordConfirm')?.touched && registerForm.get('passwordConfirm')?.errors,
+        'is-valid': showErrors && registerForm.get('passwordConfirm')?.touched && !registerForm.get('passwordConfirm')?.errors
       }">
     <label for="passwordRepeatInput">Repetir contraseña</label>
-    @if (mostrarErrores && registerForm.get('passwordRepeat')?.errors) {
+    @if (showErrors && registerForm.get('passwordConfirm')?.errors) {
       <div class="form-text text-danger small mt-1">
         @if (registerForm.get('passwordRepeat')?.hasError('required')) {
           Campo obligatorio
@@ -126,8 +130,8 @@
     <button
       type="submit"
       class="btn btn-dark w-100 d-block btn-primary-hover"
-      [disabled]="cargando">
-      @if (cargando) {
+      [disabled]="isLoading">
+      @if (isLoading) {
         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
         Registrando...
       } @else {

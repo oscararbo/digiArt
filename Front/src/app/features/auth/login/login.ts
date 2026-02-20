@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass, CommonModule, NgIf } from '@angular/common';
 import { emailValidator, passwordValidator } from '../../../core/validators/auth.validators';
@@ -16,7 +16,7 @@ export class Login implements OnInit {
   formLogin: FormGroup;
   cargando: boolean = false;
   mostrarErrores: boolean = false;
-  errorMessage: string | null = null;
+  errorMessage = signal<string | null>(null);
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
   private tokenRefreshService = inject(TokenRefreshService);
@@ -58,7 +58,7 @@ export class Login implements OnInit {
    */
   async iniciarSesion() {
     this.mostrarErrores = true;
-    this.errorMessage = null;
+    this.errorMessage.set(null);
 
     if (this.formLogin.invalid) {
       return;
@@ -83,9 +83,27 @@ export class Login implements OnInit {
 
       if (!response.ok) {
         console.error('Errores del servidor:', data);
-        // Prefer inline error message instead of alert
-        const msg = data?.errors?.email?.[0] || data?.errors?.password?.[0] || data?.error || 'Credenciales inválidas';
-        this.errorMessage = msg;
+        // Extract error message from backend response
+        let errorMsg = 'Credenciales inválidas';
+        
+        // Try non_field_errors first (general errors)
+        if (data?.errors?.non_field_errors?.length > 0) {
+          errorMsg = data.errors.non_field_errors[0];
+        }
+        // Then try email errors
+        else if (data?.errors?.email?.length > 0) {
+          errorMsg = data.errors.email[0];
+        }
+        // Then try password errors
+        else if (data?.errors?.password?.length > 0) {
+          errorMsg = data.errors.password[0];
+        }
+        // Finally try generic error field
+        else if (data?.error) {
+          errorMsg = data.error;
+        }
+        
+        this.errorMessage.set(errorMsg);
         return;
       }
 
@@ -102,7 +120,7 @@ export class Login implements OnInit {
       this.router.navigate(['/home']);
     } catch (error) {
       console.error('Error en la solicitud:', error);
-      alert('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
     } finally {
       this.cargando = false;
     }

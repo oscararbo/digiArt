@@ -6,36 +6,31 @@ from Artworks.models import Artwork, Like
 
 
 class ToggleLikeView(APIView):
-    """
-    POST: Dar/Quitar like a una obra
-    Requiere autenticación
-    """
+    """POST: Toggle like on an artwork (auth required)."""
     permission_classes = [IsAuthenticated]
     
     def post(self, request, artwork_id):
         try:
             artwork = Artwork.objects.get(id=artwork_id)
             
-            # Verificar si el usuario ya dio like
-            like = Like.objects.filter(artwork=artwork, usuario=request.user).first()
+            # Check if user already liked
+            like = Like.objects.filter(artwork=artwork, user=request.user).first()
             
             if like:
-                # Si existe, eliminar el like
                 like.delete()
                 action = 'unliked'
             else:
-                # Si no existe, crear el like
-                Like.objects.create(artwork=artwork, usuario=request.user)
+                Like.objects.create(artwork=artwork, user=request.user)
                 action = 'liked'
             
-            # Actualizar el contador de likes en la obra
-            artwork.likes = artwork.user_likes.count()
-            artwork.save(update_fields=['likes'])
+            # Update like count
+            artwork.like_count = artwork.user_likes.count()
+            artwork.save(update_fields=['like_count'])
             
             return Response({
                 'success': True,
                 'action': action,
-                'likes': artwork.likes,
+                'likes': artwork.like_count,
                 'message': f'Obra {"marcada como favorita" if action == "liked" else "eliminada de favoritos"}'
             }, status=status.HTTP_200_OK)
             
@@ -47,23 +42,19 @@ class ToggleLikeView(APIView):
 
 
 class CheckLikeView(APIView):
-    """
-    GET: Verificar si el usuario actual le ha dado like a una obra
-    Requiere autenticación
-    """
+    """GET: Check if current user liked an artwork (auth required)."""
     permission_classes = [IsAuthenticated]
     
     def get(self, request, artwork_id):
         try:
             artwork = Artwork.objects.get(id=artwork_id)
             
-            # Verificar si existe un like
-            liked = Like.objects.filter(artwork=artwork, usuario=request.user).exists()
+            liked = Like.objects.filter(artwork=artwork, user=request.user).exists()
             
             return Response({
                 'success': True,
                 'liked': liked,
-                'likes': artwork.likes
+                'likes': artwork.like_count
             }, status=status.HTTP_200_OK)
             
         except Artwork.DoesNotExist:
@@ -74,9 +65,7 @@ class CheckLikeView(APIView):
 
 
 class GetArtworkLikesView(APIView):
-    """
-    GET: Obtener cantidad de likes de una obra
-    """
+    """GET: Return like count for an artwork."""
     permission_classes = [AllowAny]
     
     def get(self, request, artwork_id):
@@ -86,7 +75,7 @@ class GetArtworkLikesView(APIView):
             return Response({
                 'success': True,
                 'artwork_id': artwork_id,
-                'likes': artwork.likes
+                'likes': artwork.like_count
             }, status=status.HTTP_200_OK)
             
         except Artwork.DoesNotExist:
