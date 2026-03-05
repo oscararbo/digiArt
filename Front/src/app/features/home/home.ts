@@ -5,14 +5,9 @@ import { RouterLink } from '@angular/router';
 import { ArtCard } from '../../shared/components/art-card/art-card';
 import { UploadButton } from '../../shared/components/upload-button/upload-button';
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
-import { LoginPopupService } from '../../shared/services/login-popup.service';
-import { UserService } from '../../core/services/user.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { AuthGuard } from '../../core/guards/auth.guard';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 
-// Simple shared signals for genres and artworks
+// Shared signals for genres and artworks
 export const genresSignal = signal<any[]>([]);
 export const artworksSignal = signal<any[]>([]);
 
@@ -46,18 +41,12 @@ interface HomeSection {
     imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule, RouterLink]
 })
 export class Home implements OnInit {
-    private loginPopupService = inject(LoginPopupService);
-    private userService = inject(UserService);
-    private http = inject(HttpClient);
     private notificationService = inject(NotificationService);
-    private authGuard = inject(AuthGuard);
     
+    // Signals
     sections = signal<HomeSection[]>([]);
     allGenres = signal<any[]>([]);
     currentUser: any = null;
-    
-    // State for search and filters
-    isSearchSectionCollapsed: boolean = false;
     
     // Search and filter state
     searchTerm: string = '';
@@ -66,26 +55,11 @@ export class Home implements OnInit {
     searchResults = signal<Artwork[]>([]);
     isSearching: boolean = false;
     isSearchLoading: boolean = false;
+    isSearchSectionCollapsed: boolean = false;
     
-    // Modal (signal-backed property to keep template bindings working)
+    // Modal state
     private _isModalOpen = signal<boolean>(false);
     private _modalSection = signal<HomeSection | null>(null);
-
-    get isModalOpen(): boolean {
-        return this._isModalOpen();
-    }
-
-    set isModalOpen(value: boolean) {
-        this._isModalOpen.set(value);
-    }
-
-    get modalSection(): HomeSection | null {
-        return this._modalSection();
-    }
-
-    set modalSection(value: HomeSection | null) {
-        this._modalSection.set(value);
-    }
     pagedArtworks = signal<Artwork[]>([]);
     artworksPerPage: number = 30;
 
@@ -146,27 +120,48 @@ export class Home implements OnInit {
                         }));
                     } catch (e) {}
                 } catch (err) {
-                    this.notificationService.showError('Error al actualizar obras. Por favor recarga la página.');
+                    this.notificationService.showError('Error al actualizar obras. Por favor recarga la pÃ¡gina.');
                 }
             }
         });
     }
 
     // On component initialization, load user data, genres, and sections to display on the home page.
+    // Getter/Setter para modal open state
+    get isModalOpen(): boolean {
+        return this._isModalOpen();
+    }
+
+    set isModalOpen(value: boolean) {
+        this._isModalOpen.set(value);
+    }
+
+    // Getter/Setter para modal section
+    get modalSection(): HomeSection | null {
+        return this._modalSection();
+    }
+
+    set modalSection(value: HomeSection | null) {
+        this._modalSection.set(value);
+    }
+
     ngOnInit() {
         this.loadData();
     }
 
-    // Load user data, genres, and sections for the home page.
-    loadData(){
+// #region LIFECYCLE AND INITIALIZATION
+
+    /**
+     * Load initial data when component initializes
+     */
+    loadData() {
         this.loadCurrentUser();
         this.loadGenres();
         this.loadSections();
     }
+
     /**
-     * Retrieve the current user's information from local storage and store it in the component's state.
-     * This function is called during component initialization to ensure that user data is available for features like liking artworks or displaying user-specific content.
-     * @returns
+     * Load current user information from localStorage
      */
     loadCurrentUser() {
         const userStr = localStorage.getItem('user');
@@ -175,9 +170,8 @@ export class Home implements OnInit {
         }
     }
 
-    /** 
-     * Load the list of art genres from the backend API and filter them to include only visual arts genres. This function is called during component initialization to populate the genre filter options and to load artworks by genre on the home page.
-     * @returns
+    /**
+     * Load visual arts genres from backend API
      */
     async loadGenres() {
         try {
@@ -189,7 +183,7 @@ export class Home implements OnInit {
                 this.allGenres.set(filtered);
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar los géneros. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar los gÃ©neros. Por favor intenta de nuevo.');
         }
     }
 
@@ -311,7 +305,7 @@ export class Home implements OnInit {
                 };
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar artworks del género. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar artworks del gÃ©nero. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -330,15 +324,15 @@ export class Home implements OnInit {
             authorUsername: artwork.author_username,
             imageUrl: artwork.image_url || artwork.imageUrl,
             genreNames: artwork.genre_names || [],
-            viewCount: artwork.view_count ?? 0,
-            likeCount: artwork.like_count ?? 0,
+            viewCount: artwork.viewCount ?? artwork.view_count ?? artwork.views ?? 0,
+            likeCount: artwork.likeCount ?? artwork.like_count ?? artwork.likes ?? 0,
             createdAt: artwork.created_at
         }));
     }
 
     /**
      * Open a modal to display a paginated list of artworks for a specific section (featured, recent, or genre). 
-     * This function is called when the user clicks on the "Ver más" button for a section on the home page, allowing them to see more artworks related to that section.
+     * This function is called when the user clicks on the "Ver mÃ¡s" button for a section on the home page, allowing them to see more artworks related to that section.
      * @param section
      * @returns 
      */
@@ -369,7 +363,7 @@ export class Home implements OnInit {
                 this.isModalOpen = true;
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar más artworks. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar mÃ¡s artworks. Por favor intenta de nuevo.');
         }
     }
 
@@ -385,10 +379,11 @@ export class Home implements OnInit {
         this.loadData();
     }
 
+// #endregion
+// #region SEARCH AND FILTERING
+
     /**
-     * Perform a search for artworks based on the search term and selected genre filter. This function is called when the user submits a search query or changes the genre filter, allowing them to find artworks that match their criteria.
-     * It also handles sorting the search results by recent or popular.
-     * @returns 
+     * Search artworks by term and/or genre filter with optional sorting
      */
     async runSearch() {
         if (this.searchTerm.trim() === '' && this.selectedGenreId === null) {
@@ -481,74 +476,18 @@ export class Home implements OnInit {
     }
 
     /**
-     * Toggle the like status of an artwork by making an API call to the backend.
-     * This function is called when the user clicks on the like button for an artwork, allowing them to like or unlike the artwork and see the updated like count in real-time.
-     * @param artwork 
-     * @returns 
+     * Toggle search section visibility
      */
-    async toggleLike(artwork: Artwork) {
-        // Check authentication before proceeding
-        if (!this.authGuard.checkAuthentication()) {
-            return;
-        }
 
-        const token = localStorage.getItem('access_token');
+// #endregion
+// #region PAGINATION HELPERS
 
-        if (!token) {
-            this.loginPopupService.open();
-            return;
-        }
-
-        try {
-            // Use UserService liked list to compute action
-            const wasLiked = !!this.userService.userLikedArtworks().find((a: any) => String(a.id) === String(artwork.id));
-            const action = wasLiked ? 'remove' : 'add';
-
-            let data: any;
-            try {
-                const headers = { 'Authorization': `Bearer ${token}` };
-                data = await firstValueFrom(this.http.post<any>(
-                    `http://127.0.0.1:8000/api/artworks/${artwork.id}/like/`,
-                    { action },
-                    { headers }
-                ));
-            } catch (httpErr: any) {
-                if (httpErr?.status === 401) {
-                    this.loginPopupService.open();
-                    return;
-                }
-                this.notificationService.showError('Error al procesar el "Me gusta". Por favor intenta de nuevo.');
-                throw httpErr;
-            }
-
-            const nowLiked = data.action === 'add' || data.action === 'liked' || (data.success && (data.action === undefined) ? (data.likes > 0) : false);
-            const updated = { ...(artwork as any), likeCount: data.likes ?? artwork.likeCount, liked: !!nowLiked };
-
-            // Propagate globally and update user's liked list
-            try { this.userService.updateArtworkGlobally(updated); } catch (e) { }
-            try {
-                if (updated.liked) {
-                    this.userService.userLikedArtworks.update(list => {
-                        if (list.find(a => String(a.id) === String(updated.id))) return list;
-                        return [{ ...(updated as any) }, ...list];
-                    });
-                } else {
-                    this.userService.userLikedArtworks.update(list => list.filter(a => String(a.id) !== String(updated.id)));
-                }
-            } catch (e) { }
-
-        } catch (error) {
-            this.notificationService.showError('Error al cambiar el estado de "Me gusta". Por favor intenta de nuevo.');
-        }
-    }
-
-    // Pagination helpers for the modal artwork grid.
     get itemsPerRow(): number {
         return 3;
     }
 
-    // Calculate the artworks to be displayed on the current page of the modal based on pagination.
     get modalRowCount(): number {
         return Math.ceil(this.pagedArtworks().length / this.itemsPerRow);
     }
+// #endregion
 }

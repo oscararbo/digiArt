@@ -13,15 +13,19 @@ export class UploadButton {
     private uploadModalService = inject(UploadModalService);
     private loginPopupService = inject(LoginPopupService);
 
+// #region UPLOAD ACTIONS
+
     openModal() {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            // Open the login prompt if the user is not authenticated.
             this.loginPopupService.open();
             return;
         }
         this.uploadModalService.openModal();
     }
+
+// #endregion
+// #region UI INTERACTIONS
 
     onMouseEnter() {
         this.isHovering = true;
@@ -30,4 +34,5 @@ export class UploadButton {
     onMouseLeave() {
         this.isHovering = false;
     }
+// #endregion
 }

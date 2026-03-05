@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        pre { background: #f0f0f0; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+        .section { margin-bottom: 2rem; }
+        button { padding: 0.5rem 1rem; margin: 0.5rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test API DigiArt</h1>
+    
+    <div class="section">
+        <h2>1. Get Artworks List</h2>
+        <button onclick="testGetArtworks()">Test</button>
+        <pre id="artworks-result">Waiting...</pre>
+    </div>
+    
+    <div class="section">
+        <h2>2. Get Artwork Detail</h2>
+        <input type="text" id="artwork-id" placeholder="Enter Artwork ID" />
+        <button onclick="testGetArtworkDetail()">Test</button>
+        <pre id="detail-result">Waiting...</pre>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        async function testGetArtworks() {
+            try {
+                const response = await fetch(`${API_URL}/artworks/`);
+                const data = await response.json();
+                document.getElementById('artworks-result').textContent = JSON.stringify(data, null, 2);
+                
+                // Extract first artwork ID if available
+                if (data.artworks && data.artworks.length > 0) {
+                    document.getElementById('artwork-id').value = data.artworks[0].id;
+                }
+            } catch (error) {
+                document.getElementById('artworks-result').textContent = 'ERROR: ' + error.message;
+            }
+        }
+        
+        async function testGetArtworkDetail() {
+            const id = document.getElementById('artwork-id').value;
+            if (!id) {
+                alert('Please enter an artwork ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/artworks/${id}/`);
+                const data = await response.json();
+                document.getElementById('detail-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('detail-result').textContent = 'ERROR: ' + error.message;
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', testGetArtworks);
+    </script>
+</body>
+</html>

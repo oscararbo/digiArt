@@ -1,7 +1,55 @@
+# region IMPORTS
 from rest_framework import serializers
-from Artworks.models import Artwork, Genre
+from Artworks.models import Artwork, Genre, Comment
+from datetime import timedelta
+from django.utils import timezone
+# endregion
 
+# region COMMENT SERIALIZER
+class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for comments on artworks."""
+    username = serializers.CharField(source='author.username', read_only=True)
+    profileImage = serializers.SerializerMethodField()
+    relativeTime = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = ('id', 'username', 'profileImage', 'content', 'created_at', 'relativeTime')
+        read_only_fields = ('id', 'created_at', 'username', 'profileImage', 'relativeTime')
+    
+    def get_profileImage(self, obj):
+        if obj.author.profile_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.profile_image.url)
+            return f'http://127.0.0.1:8000{obj.author.profile_image.url}'
+        return None
+    
+    def get_relativeTime(self, obj):
+        """Calculate relative time (e.g., '2 hours ago', '1 day ago')"""
+        now = timezone.now()
+        delta = now - obj.created_at
+        
+        if delta < timedelta(minutes=1):
+            return 'Ahora mismo'
+        elif delta < timedelta(hours=1):
+            minutes = delta.seconds // 60
+            return f'Hace {minutes} minuto{"s" if minutes != 1 else ""}'
+        elif delta < timedelta(days=1):
+            hours = delta.seconds // 3600
+            return f'Hace {hours} hora{"s" if hours != 1 else ""}'
+        elif delta < timedelta(days=7):
+            days = delta.days
+            return f'Hace {days} día{"s" if days != 1 else ""}'
+        elif delta < timedelta(days=30):
+            weeks = delta.days // 7
+            return f'Hace {weeks} semana{"s" if weeks != 1 else ""}'
+        else:
+            months = delta.days // 30
+            return f'Hace {months} mes{"es" if months != 1 else ""}'
+# endregion
 
+# region ARTWORK VALIDATION MIXIN
 class ArtworkValidationMixin:
     """Mixin con métodos de validación compartidos para serializadores de Artwork"""
     
@@ -32,8 +80,9 @@ class ArtworkValidationMixin:
         if len(title) > 200:
             raise serializers.ValidationError("El título no puede exceder 200 caracteres")
         return title
+# endregion
 
-
+# region ARTWORK SERIALIZER
 class ArtworkSerializer(ArtworkValidationMixin, serializers.ModelSerializer):
     image = serializers.ImageField(required=False, allow_null=True, use_url=False)
     genres = serializers.PrimaryKeyRelatedField(
@@ -41,31 +90,59 @@ class ArtworkSerializer(ArtworkValidationMixin, serializers.ModelSerializer):
         many=True,
         required=False
     )
-    author_username = serializers.CharField(source='author.username', read_only=True)
-    genre_names = serializers.SerializerMethodField()
-    image_url = serializers.SerializerMethodField()
+    authorUsername = serializers.CharField(source='author.username', read_only=True)
+    authorId = serializers.CharField(source='author.id', read_only=True)
+    authorProfileImage = serializers.SerializerMethodField()
+    genreNames = serializers.SerializerMethodField()
+    imageUrl = serializers.SerializerMethodField()
+    isLiked = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
+    viewCount = serializers.IntegerField(source='view_count', read_only=True)
+    likeCount = serializers.IntegerField(source='like_count', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     
     class Meta:
         model = Artwork
         fields = (
-            'id', 'title', 'description', 'image', 'image_url',
-            'genres', 'genre_names', 'author_username',
-            'view_count', 'like_count', 'created_at'
+            'id', 'title', 'description', 'image', 'imageUrl',
+            'genres', 'genreNames', 'authorUsername', 'authorId', 'authorProfileImage',
+            'viewCount', 'likeCount', 'createdAt', 'isLiked', 'comments'
         )
-        read_only_fields = ('id', 'view_count', 'like_count', 'created_at', 'author_username', 'image_url')
+        read_only_fields = ('id', 'viewCount', 'likeCount', 'createdAt', 'authorUsername', 'authorId', 'imageUrl', 'isLiked', 'comments')
     
-    def get_genre_names(self, obj):
+    def get_authorProfileImage(self, obj):
+        if obj.author.profile_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.profile_image.url)
+            return f'http://127.0.0.1:8000{obj.author.profile_image.url}'
+        return None
+    
+    def get_genreNames(self, obj):
         return [g.name for g in obj.genres.all()]
     
-    def get_image_url(self, obj):
+    def get_imageUrl(self, obj):
         if obj.image:
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.image.url)
             return f'http://127.0.0.1:8000{obj.image.url}'
         return None
+    
+    def get_isLiked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from Artworks.models import Like
+            return Like.objects.filter(artwork=obj, user=request.user).exists()
+        return False
+    
+    def get_comments(self, obj):
+        comments = obj.comments.all()
+        serializer = CommentSerializer(comments, many=True, context=self.context)
+        return serializer.data
+# endregion
 
-
+# region ARTWORK CREATE SERIALIZER
 class ArtworkCreateSerializer(ArtworkValidationMixin, serializers.ModelSerializer):
     genres = serializers.PrimaryKeyRelatedField(
         queryset=Genre.objects.all(),
@@ -76,3 +153,4 @@ class ArtworkCreateSerializer(ArtworkValidationMixin, serializers.ModelSerialize
     class Meta:
         model = Artwork
         fields = ('title', 'description', 'image', 'genres')
+# endregion

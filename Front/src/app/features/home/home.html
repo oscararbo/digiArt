@@ -1,5 +1,5 @@
 <div class="home-container">
-    <!-- Search and filters -->
+    <!-- Search and Filter Section -->
     <div class="search-section" [class.collapsed]="isSearchSectionCollapsed">
         <!-- Toggle button -->
         <button class="btn-toggle-search" (click)="toggleSearchSection()" title="Mostrar/Ocultar filtros">
@@ -21,7 +21,7 @@
                     </ng-container>
                     <ng-container *ngIf="!isSearchLoading">Buscar</ng-container>
                 </button>
-                <button class="btn-profile" routerLink="/profile" title="Mi Perfil">
+                <button class="btn-profile" [routerLink]="['/profile', currentUser?.id]" title="Mi Perfil">
                     <i class="bi bi-person-circle"></i>
                     <span>Perfil</span>
                 </button>
@@ -67,7 +67,7 @@
     </div>
     
 
-    <!-- Search results -->
+    <!-- Search Results Section -->
     <div *ngIf="isSearching" class="search-results-section">
             <div class="results-container">
                 <div class="results-header">
@@ -87,17 +87,6 @@
                                 imageUrl: artwork.imageUrl 
                             }">
                         </app-art-card>
-                        <div class="result-stats">
-                            <span class="stat">
-                                <i class="bi bi-eye"></i> {{ artwork.viewCount }}
-                            </span>
-                            <button 
-                                class="stat like-btn"
-                                (click)="toggleLike(artwork)"
-                                [class.liked]="artwork.likeCount > 0">
-                                <i class="bi bi-heart"></i> {{ artwork.likeCount }}
-                            </button>
-                        </div>
                     </div>
                 </div>
                 <ng-template #noResults>
@@ -108,7 +97,9 @@
                 </ng-template>
             </div>
         </div>
-    <div *ngIf="!isSearching" class="sections-container">
+
+        <!-- Home Sections (Featured, Recent) -->
+        <div *ngIf="!isSearching" class="sections-container">
         <div *ngFor="let section of sections()" class="section">
             <div class="section-header">
                 <h2 class="section-title">{{ section.title }}</h2>
@@ -138,7 +129,7 @@
         </div>
     </div>
 
-        <!-- Modal for section details -->
+        <!-- Modal for Section Details -->
         <div *ngIf="isModalOpen && modalSection" class="modal-overlay" (click)="closeModal()">
             <div class="modal-content" (click)="$event.stopPropagation()">
                 <div class="modal-header">
@@ -165,9 +156,9 @@
             </div>
         </div>
 
-    <!-- Upload button -->
+    <!-- Upload Button -->
     <app-upload-button></app-upload-button>
 
-    <!-- Upload modal (always mounted) -->
+    <!-- Upload Modal (Always Mounted) -->
     <app-upload-art-form></app-upload-art-form>
 </div>

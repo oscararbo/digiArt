@@ -1,7 +1,10 @@
+# region IMPORTS
 from datetime import timedelta
 from pathlib import Path
 from decouple import config
+# endregion
 
+# region BASIC CONFIGURATION
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", "tu-clave-secreta-por-defecto-cambiar-en-produccion")
@@ -12,13 +15,11 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(','
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
 
-# ========================
-# == VARIABLES ==
+# Custom Variables
 EXTENSIONES_BLACKLIST = [".ru", ".xyz", ".io"]
+# endregion
 
-# ========================
-# ========================
-
+# region INSTALLED APPS
 INSTALLED_APPS = [
     'corsheaders',
     'django.contrib.admin',
@@ -36,7 +37,9 @@ INSTALLED_APPS = [
     'Users',
     'Artworks',
 ]
+# endregion
 
+# region JWT CONFIGURATION
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -54,7 +57,9 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+# endregion
 
+# region MIDDLEWARE
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -65,7 +70,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+# endregion
 
+# region TEMPLATES AND URL CONFIGURATION
 ROOT_URLCONF = 'DigiArtBack.urls'
 
 TEMPLATES = [
@@ -84,16 +91,18 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'DigiArtBack.wsgi.application'
+# endregion
 
-# Database
+# region DATABASE
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# endregion
 
-# Password validation
+# region PASSWORD VALIDATION
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -108,8 +117,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+# endregion
 
-# Internationalization
+# region INTERNATIONALIZATION
 LANGUAGE_CODE = 'es-ES'
 
 TIME_ZONE = 'Europe/Madrid'
@@ -117,16 +127,17 @@ TIME_ZONE = 'Europe/Madrid'
 USE_I18N = True
 
 USE_TZ = True
+# endregion
 
-# Static files (CSS, JavaScript, Images)
+# region STATIC AND MEDIA FILES
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+# endregion
 
-# Authentication backends
+# region AUTHENTICATION
 AUTHENTICATION_BACKENDS = [
     "Users.backend.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",
@@ -135,5 +146,5 @@ AUTHENTICATION_BACKENDS = [
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model
 AUTH_USER_MODEL = 'Users.CustomUser'
+# endregion

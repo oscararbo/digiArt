@@ -42,8 +42,8 @@ export class UserService {
             authorUsername: raw.author_username ?? raw.author ?? raw.user?.username ?? '',
             imageUrl: raw.image_url ?? raw.imageUrl ?? '',
             genreNames: raw.genre_names ?? raw.genreNames ?? [],
-            viewCount: raw.view_count ?? 0,
-            likeCount: raw.like_count ?? 0,
+            viewCount: raw.viewCount ?? raw.view_count ?? raw.views ?? 0,
+            likeCount: raw.likeCount ?? raw.like_count ?? raw.likes ?? 0,
             createdAt: raw.created_at ?? ''
         };
         return normalized;
@@ -131,6 +131,19 @@ export class UserService {
     async getUserProfile(username: string): Promise<UserProfile | null> {
         try {
             const data = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/users/${username}/`));
+            if (data?.success) return data.user;
+        } catch (error) {
+            this.notificationService.showError('Error al cargar el perfil del usuario. Por favor intenta de nuevo.');
+        }
+        return null;
+    }
+
+    /**
+     * Get user profile by user ID
+     */
+    async getUserProfileById(userId: string): Promise<UserProfile | null> {
+        try {
+            const data = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/users/id/${userId}/`));
             if (data?.success) return data.user;
         } catch (error) {
             this.notificationService.showError('Error al cargar el perfil del usuario. Por favor intenta de nuevo.');

@@ -1,12 +1,15 @@
 <form [formGroup]="formLogin" (ngSubmit)="iniciarSesion()" class="w-100">
+  <!-- Branding -->
   <div class="w-100 d-flex justify-content-center mb-3">
     <img src="assets/images/digiArt.png" alt="DigiArt" class="w-50">
   </div>
 
+  <!-- Error feedback -->
   <div *ngIf="errorMessage()" class="mb-3">
     <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
   </div>
 
+  <!-- Form title -->
   <div class="mb-5 mt-3 border-bottom">
     <h2 class="h3 text-center w-100 mb-4">Iniciar sesión</h2>
   </div>
@@ -61,7 +64,7 @@
     }
   </div>
 
-  <!-- Submit button -->
+  <!-- Submit action -->
   <div class="text-center mt-4">
     <button
       class="btn btn-dark w-100 d-block btn-primary-hover"

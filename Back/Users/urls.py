@@ -1,9 +1,12 @@
+# region IMPORTS
 from django.urls import path
 from Users.views import (
     LoginView, RegisterView, CheckUsernameView, CheckEmailView,
-    UserDetailView, UserUpdateView, UserLikedArtworksView, UserArtworksView
+    UserDetailView, UserDetailByIdView, UserUpdateView, UserLikedArtworksView, UserArtworksView
 )
+# endregion
 
+# region URL PATTERNS
 urlpatterns = [
     # Auth endpoints
     path('auth/login/', LoginView.as_view(), name='login'),
@@ -13,7 +16,9 @@ urlpatterns = [
     
     # User profile endpoints
     path('users/<str:username>/', UserDetailView.as_view(), name='user-detail'),
+    path('users/id/<int:user_id>/', UserDetailByIdView.as_view(), name='user-detail-by-id'),
     path('users/me/update/', UserUpdateView.as_view(), name='user-update'),
     path('users/<int:user_id>/liked-artworks/', UserLikedArtworksView.as_view(), name='user-liked-artworks'),
     path('users/<int:user_id>/artworks/', UserArtworksView.as_view(), name='user-artworks'),
 ]
+# endregion

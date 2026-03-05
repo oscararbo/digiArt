@@ -30,6 +30,8 @@ export class Login implements OnInit {
     });
   }
 
+// #region HELPERS
+
   private async hashPassword(password: string): Promise<string> {
     const enc = new TextEncoder();
     const data = enc.encode(password);
@@ -38,10 +40,11 @@ export class Login implements OnInit {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
+// #endregion
+// #region LIFECYCLE
+
   /**
-   * On component initialization, check if there are email and password values in the navigation state 
-   * (e.g., coming from the registration page) and pre-fill the login form with those values for a smoother user experience.
-   * @returns
+   * Pre-fill form when coming from register flow
    */
   ngOnInit() {
     const state = (history as any).state;
@@ -53,10 +56,11 @@ export class Login implements OnInit {
     }
   }
 
+// #endregion
+// #region AUTH FLOW
+
   /**
-   * Handle the login process by sending the form data to the backend API. 
-   * It also performs client-side validation before making the API call.
-   * @returns 
+   * Validate and submit login credentials
    */
   async iniciarSesion() {
     this.mostrarErrores = true;
@@ -85,7 +89,7 @@ export class Login implements OnInit {
 
       if (!response.ok) {
         // Extract error message from backend response
-        let errorMsg = 'Credenciales inválidas';
+        let errorMsg = 'Credenciales invÃ¡lidas';
         
         // Try non_field_errors first (general errors)
         if (data?.errors?.non_field_errors?.length > 0) {
@@ -113,15 +117,16 @@ export class Login implements OnInit {
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Iniciar renovación automática del token
+      // Iniciar renovaciÃ³n automÃ¡tica del token
       this.tokenRefreshService.startAutoRefresh();
       
       this.router.navigate(['/home']);
     } catch (error) {
-      this.notificationService.showError('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
-      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.notificationService.showError('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
     } finally {
       this.cargando = false;
     }
   }
+// #endregion
 }

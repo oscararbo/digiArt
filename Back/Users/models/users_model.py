@@ -1,9 +1,11 @@
+# region IMPORTS
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.conf import settings
+# endregion
 
-
+# region CUSTOM USER MANAGER
 class CustomUserManager(BaseUserManager):
     def create_user(self, email=None, username=None, password=None, **extra_fields):
         if not username:
@@ -33,8 +35,9 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, username, password, **extra_fields)
+# endregion
 
-
+# region CUSTOM USER MODEL
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True, blank=False, null=False)
     username = models.CharField(max_length=50, blank=True, null=True)
@@ -56,6 +59,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    # region META AND STRING METHODS
     class Meta:
         db_table = 'users'
         ordering = ['-is_superuser', 'is_active', 'email']
@@ -73,3 +77,5 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.first_name
+    # endregion
+# endregion

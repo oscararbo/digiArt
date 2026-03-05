@@ -1,12 +1,14 @@
-<div class="profile-container" [class.sidebar-collapsed]="isSidebarCollapsed()">
-    <!-- Sidebar: User Profile Info (33% or collapsed) -->
-    <aside class="profile-sidebar" [class.collapsed]="isSidebarCollapsed()">
-        <!-- Back Button -->
-        <button class="btn-back" (click)="goBack()" title="Volver a inicio">
-            <i class="bi bi-arrow-left"></i>
-        </button>
+<div class="profile-container" [class.sidebar-collapsed]="!sidebarExpanded()">
+    <!-- Back Button -->
+    <app-back-button></app-back-button>
 
-        <div class="sidebar-content">
+    <!-- Sidebar: User Profile Info -->
+    <app-collapsible-sidebar 
+        position="left"
+        sidebarClass="profile-sidebar"
+        [overlay]="false"
+        [expandedSignal]="sidebarExpanded"
+        [hasBottomActions]="true">
             <!-- Profile Picture -->
             <div class="profile-avatar">
                  <img *ngIf="userProfile()?.profile_image" 
@@ -63,37 +65,28 @@
                     </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Bottom Buttons -->
-        <div class="sidebar-bottom-actions" *ngIf="!isSidebarCollapsed()">
-            <button *ngIf="isCurrentUser() && !isEditingProfile()" 
-                    class="btn-action btn-action-edit"
-                    (click)="startEditingProfile()"
-                    title="Editar perfil">
-                <i class="bi bi-pencil"></i>
-                <span>Editar perfil</span>
-            </button>
-            <button *ngIf="isCurrentUser()" 
-                    class="btn-action btn-action-logout"
-                    (click)="logout()"
-                    title="Cerrar sesión">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Cerrar sesión</span>
-            </button>
-        </div>
-
-        <!-- Collapse Button -->
-        <button class="btn-collapse-sidebar" 
-                (click)="toggleSidebarCollapsed()"
-                title="Colapsar/Expandir" 
-                [class.collapsed]="isSidebarCollapsed()">
-            <i class="bi" [class.bi-chevron-left]="!isSidebarCollapsed()" [class.bi-chevron-right]="isSidebarCollapsed()"></i>
+        
+        <!-- Bottom Actions -->
+        <button *ngIf="isCurrentUser() && !isEditingProfile()"
+                bottom-actions
+                class="btn-action btn-action-edit"
+                (click)="startEditingProfile()"
+                title="Editar perfil">
+            <i class="bi bi-pencil"></i>
+            <span>Editar perfil</span>
         </button>
-    </aside>
+        <button *ngIf="isCurrentUser()"
+                bottom-actions
+                class="btn-action btn-action-logout"
+                (click)="logout()"
+                title="Cerrar sesión">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Cerrar sesión</span>
+        </button>
+    </app-collapsible-sidebar>
 
-    <!-- Main Content: Artworks (67% or 100% if sidebar collapsed) -->
-    <main class="profile-main">
+    <!-- Main Content: Artworks -->
+    <div class="profile-main">
         <!-- Favorites Section -->
         <section class="artworks-section">
             <div class="section-header">
@@ -127,14 +120,10 @@
                                 imageUrl: obra.imageUrl,
                                 likes: obra.likeCount
                             }"></app-art-card>
-                            <div class="artwork-stats">
-                                <span class="stat">
-                                    <i class="bi bi-eye"></i> {{ obra.viewCount }}
-                                </span>
-                                <span class="stat">
-                                    <i class="bi bi-heart"></i> {{ obra.likeCount }}
-                                </span>
-                            </div>
+                            <app-artwork-stats-display 
+                                [viewCount]="obra.viewCount"
+                                [likeCount]="obra.likeCount">
+                            </app-artwork-stats-display>
                         </div>
                     </div>
                 </div>
@@ -180,14 +169,10 @@
                                 imageUrl: obra.imageUrl,
                                 likes: obra.likeCount
                             }"></app-art-card>
-                            <div class="artwork-stats">
-                                <span class="stat">
-                                    <i class="bi bi-eye"></i> {{ obra.viewCount }}
-                                </span>
-                                <span class="stat">
-                                    <i class="bi bi-heart"></i> {{ obra.likeCount }}
-                                </span>
-                            </div>
+                            <app-artwork-stats-display 
+                                [viewCount]="obra.viewCount"
+                                [likeCount]="obra.likeCount">
+                            </app-artwork-stats-display>
                         </div>
                     </div>
                 </div>
@@ -199,11 +184,11 @@
                 </ng-template>
             </div>
         </section>
-    </main>
+    </div>
 
     <!-- Upload Button -->
     <app-upload-button></app-upload-button>
 
-    <!-- Upload Modal -->
+    <!-- Upload Modal (Always Mounted) -->
     <app-upload-art-form></app-upload-art-form>
 </div>

@@ -37,6 +37,8 @@ export class Register {
     });
   }
 
+// #region HELPERS
+
   private async hashPassword(password: string): Promise<string> {
     const enc = new TextEncoder();
     const data = enc.encode(password);
@@ -45,10 +47,11 @@ export class Register {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
+// #endregion
+// #region AVAILABILITY CHECKS
+
   /**
-   * Verify if the email is available by making an API call to the backend. 
-   * This function is called on input with a debounce of 1 second.
-   * @returns 
+   * Debounced email availability check
    */
   checkEmailAvailability() {
     const email = this.registerForm.get('email')?.value?.trim();
@@ -79,9 +82,7 @@ export class Register {
   }
 
   /**
-   * Verify if the username is available by making an API call to the backend. 
-   * This function is called on input with a debounce of 1 second.
-   * @returns 
+   * Debounced username availability check
    */
   checkUsernameAvailability() {
     const username = this.registerForm.get('username')?.value?.trim();
@@ -111,10 +112,11 @@ export class Register {
     }, 1000);
   }
 
+// #endregion
+// #region AUTH FLOW
+
   /**
-   * Handle the registration process by sending the form data to the backend API. 
-   * It also performs client-side validation before making the API call.
-   * @returns 
+   * Validate and submit registration form
    */
   async register() {
     this.showErrors = true;
@@ -125,7 +127,7 @@ export class Register {
     }
 
     if (this.isEmailAvailable === null) {
-      this.errorMessage.set('Por favor, espera a que se verifique el correo electrónico');
+      this.errorMessage.set('Por favor, espera a que se verifique el correo electrÃ³nico');
       return;
     }
 
@@ -143,7 +145,7 @@ export class Register {
     }
 
     if (this.registerForm.value.password !== this.registerForm.value.passwordConfirm) {
-      this.errorMessage.set('Las contraseñas no coinciden');
+      this.errorMessage.set('Las contraseÃ±as no coinciden');
       return;
     }
 
@@ -182,16 +184,14 @@ export class Register {
       // Login after successful registration using the original credentials
       await this.loginAfterRegister(this.registerForm.value.email, this.registerForm.value.password);
     } catch (error) {
-      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
     } finally {
       this.isLoading = false;
     }
   }
 
   /**
-   * Handle the login process by sending the form data to the backend API. 
-   * It also performs client-side validation before making the API call.
-   * @returns 
+   * Auto-login after successful registration
    */
   private async loginAfterRegister(email: string, password: string) {
     try {
@@ -220,13 +220,14 @@ export class Register {
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Iniciar renovación automática del token
+      // Iniciar renovaciÃ³n automÃ¡tica del token
       this.tokenRefreshService.startAutoRefresh();
 
       // Navigate to home page after successful login
       this.router.navigate(['/home']);
     } catch (error) {
-      this.errorMessage.set('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
     }
   }
+// #endregion
 }

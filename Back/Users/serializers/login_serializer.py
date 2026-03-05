@@ -1,12 +1,15 @@
+# region IMPORTS
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from Users.models import CustomUser
+# endregion
 
-
+# region LOGIN SERIALIZER
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=100, required=True)
     password = serializers.CharField(required=True, allow_blank=False, allow_null=False, min_length=6)
 
+    # region VALIDATION METHODS
     def validate_password(self, password):
         if not any(n.isdigit() for n in password):
             raise serializers.ValidationError("La contraseña debe contener al menos un número")
@@ -43,3 +46,5 @@ class LoginSerializer(serializers.Serializer):
         attrs['refresh'] = str(refresh)
 
         return attrs
+    # endregion
+# endregion

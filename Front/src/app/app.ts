@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LoginPopUp } from './shared/components/login-pop-up/login-pop-up';
 import { ErrorNotification } from './shared/components/error-notification/error-notification';
@@ -10,5 +10,4 @@ import { ErrorNotification } from './shared/components/error-notification/error-
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('DigiArt');
 }

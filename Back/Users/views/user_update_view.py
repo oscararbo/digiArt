@@ -1,10 +1,12 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from Users.serializers import UserProfileSerializer, UserProfileUpdateSerializer
+# endregion
 
-
+# region USER UPDATE VIEW
 class UserUpdateView(APIView):
     """Update the authenticated user's profile."""
     permission_classes = [IsAuthenticated]
@@ -33,3 +35,4 @@ class UserUpdateView(APIView):
                 'success': False,
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# endregion

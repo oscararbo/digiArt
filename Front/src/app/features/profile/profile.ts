@@ -1,10 +1,13 @@
-import { Component, OnInit, inject, signal, Signal, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, Signal, effect, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ArtCard } from '../../shared/components/art-card/art-card';
 import { UploadButton } from '../../shared/components/upload-button/upload-button';
 import { UploadArtForm } from '../../shared/components/upload-art-form/upload-art-form';
+import { BackButtonComponent } from '../../shared/components/back-button/back-button';
+import { CollapsibleSidebar } from '../../shared/components/collapsible-section/collapsible-section';
+import { ArtworkStatsDisplayComponent } from '../../shared/components/artwork-stats-display/artwork-stats-display';
 import { UserService, UserProfile } from '../../core/services/user.service';
 import { LogoutService } from '../../core/services/logout.service';
 
@@ -25,7 +28,8 @@ interface Artwork {
     templateUrl: './profile.html',
     styleUrl: './profile.scss',
     standalone: true,
-    imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule]
+    imports: [CommonModule, NgIf, NgFor, ArtCard, UploadButton, UploadArtForm, FormsModule, BackButtonComponent, CollapsibleSidebar, ArtworkStatsDisplayComponent],
+    encapsulation: ViewEncapsulation.None
 })
 export class Profile implements OnInit {
     private userService = inject(UserService);
@@ -34,6 +38,8 @@ export class Profile implements OnInit {
     private logoutService = inject(LogoutService);
 
     // User data
+// #region USER DATA
+
     userProfile = signal<UserProfile | null>(null);
     isCurrentUser = signal<boolean>(false);
     isEditingProfile = signal<boolean>(false);
@@ -46,46 +52,67 @@ export class Profile implements OnInit {
     private usernameCheckTimeout: ReturnType<typeof setTimeout> | null = null;
     private pendingUsernameCheck: string | null = null;
 
-    // Artworks
+// #endregion
+// #region ARTWORKS
+
     likedArtworks = signal<Artwork[]>([]);
     personalArtworks = signal<Artwork[]>([]);
 
-    // Section state
+// #endregion
+// #region SECTION STATE
+
     isFavoritesExpanded = signal<boolean>(true);
     isPersonalExpanded = signal<boolean>(true);
-    isSidebarCollapsed = signal<boolean>(false);
+    sidebarExpanded = signal<boolean>(true);
 
-    // Search/filter
+// #endregion
+// #region SEARCH AND FILTER
+
     favoritesSearchTerm = signal<string>('');
     personalSearchTerm = signal<string>('');
 
     constructor() {
-        // Monitor service signals for real-time updates using effects
         effect(() => {
             const artworks = this.userService.userLikedArtworks();
             this.likedArtworks.set(this.mapArtworks(artworks));
         });
-        
+
         effect(() => {
             const artworks = this.userService.userPersonalArtworks();
             this.personalArtworks.set(this.mapArtworks(artworks));
         });
-
-        // Also monitor the global personal artworks signal for uploads from profile
-        // The component reacts to the UserService signals directly (no global signals file)
     }
 
     ngOnInit() {
-        // Get username from route params or use current user
-        this.route.queryParams.subscribe(async (params) => {
-            const username = params['username'] || this.userService.userProfile()?.username;
+        // Get current user ID from localStorage
+        let currentUserId: string | null = null;
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                currentUserId = user?.id;
+            } catch (e) {
+                console.error('Error parsing user:', e);
+            }
+        }
+
+        // Get ID from route params
+        this.route.params.subscribe((params) => {
+            const routeUserId = params['id'];
             
-            if (username) {
-                await this.loadUserProfile(username);
+            // Validate that user can only see their own profile
+            if (routeUserId && currentUserId && String(routeUserId) !== String(currentUserId)) {
+                // Redirect to user's own profile
+                this.router.navigate(['/profile', currentUserId]);
+                return;
+            }
+
+            if (routeUserId && currentUserId) {
+                this.loadUserProfile(currentUserId);
             }
         });
 
-        // If no username in params, use current user from service
+        // If no ID in params, use current user from service
         if (!this.userProfile() && this.userService.userProfile()) {
             this.userProfile.set(this.userService.userProfile());
             this.loadUserData();
@@ -93,16 +120,16 @@ export class Profile implements OnInit {
     }
 
     /**
-     * Load user profile by username
+     * Load user profile by user ID
      */
-    async loadUserProfile(username: string) {
-        const profile = await this.userService.getUserProfile(username);
+    async loadUserProfile(userId: string) {
+        const profile = await this.userService.getUserProfileById(userId);
         if (profile) {
             this.userProfile.set(profile);
             
-            // Check if this is the current user
+            // Check if this is the current user (should always be true due to validation above)
             const currentUser = this.userService.userProfile();
-            this.isCurrentUser.set(currentUser?.username === username);
+            this.isCurrentUser.set(currentUser?.id === parseInt(userId));
             
             await this.loadUserData();
         }
@@ -130,17 +157,10 @@ export class Profile implements OnInit {
             authorUsername: artwork.author_username || artwork.author || artwork.user?.username || '',
             imageUrl: artwork.imageUrl || artwork.image_url || '',
             genreNames: artwork.genre_names || [],
-            viewCount: artwork.view_count ?? 0,
-            likeCount: artwork.like_count ?? 0,
+            viewCount: artwork.viewCount ?? artwork.view_count ?? artwork.views ?? 0,
+            likeCount: artwork.likeCount ?? artwork.like_count ?? artwork.likes ?? 0,
             createdAt: artwork.created_at || ''
         }));
-    }
-
-    /**
-     * Navigate back to home
-     */
-    goBack() {
-        this.router.navigate(['/home']);
     }
 
     /**
@@ -215,7 +235,7 @@ export class Profile implements OnInit {
         }
         const trimmedUsername = this.editingUsername().trim();
         if (trimmedUsername.length === 0) {
-            this.profileMessage.set('Por favor selecciona un nombre de usuario válido');
+            this.profileMessage.set('Por favor selecciona un nombre de usuario vÃ¡lido');
             return;
         }
 
@@ -286,39 +306,47 @@ export class Profile implements OnInit {
         );
     }
 
+// #endregion
+// #region GRID HELPERS
+
     /**
-     * Get artworks grouped in rows of 4 (or 6 if sidebar is collapsed)
+     * Get liked artworks grouped by rows
      */
     get likedArtworksRows(): Artwork[][] {
-        const cols = this.isSidebarCollapsed() ? 6 : 4;
+        const cols = !this.sidebarExpanded() ? 6 : 4;
         const rows: Artwork[][] = [];
         const filtered = this.filteredLikedArtworks;
-        
+
         for (let i = 0; i < filtered.length; i += cols) {
             rows.push(filtered.slice(i, i + cols));
         }
+
         return rows;
     }
 
     /**
-     * Get artworks grouped in rows of 4 (or 6 if sidebar is collapsed)
+     * Get personal artworks grouped by rows
      */
     get personalArtworksRows(): Artwork[][] {
-        const cols = this.isSidebarCollapsed() ? 6 : 4;
+        const cols = !this.sidebarExpanded() ? 6 : 4;
         const rows: Artwork[][] = [];
         const filtered = this.filteredPersonalArtworks;
-        
+
         for (let i = 0; i < filtered.length; i += cols) {
             rows.push(filtered.slice(i, i + cols));
         }
+
         return rows;
     }
+
+// #endregion
+// #region UI TOGGLES
 
     /**
      * Toggle sidebar collapsed state
      */
     toggleSidebarCollapsed() {
-        this.isSidebarCollapsed.update(v => !v);
+        this.sidebarExpanded.update(v => !v);
     }
 
     /**
@@ -334,4 +362,5 @@ export class Profile implements OnInit {
     togglePersonal() {
         this.isPersonalExpanded.update(v => !v);
     }
+// #endregion
 }

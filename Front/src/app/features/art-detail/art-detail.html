@@ -1,0 +1,164 @@
+<div class="art-detail-container">
+  <!-- Back Button -->
+  <app-back-button></app-back-button>
+
+  <!-- Main Content -->
+  <div class="detail-layout">
+
+    <!-- Left Sidebar: Artwork Information -->
+    <app-collapsible-sidebar 
+      position="left"
+      sidebarClass="info-section"
+      [overlay]="true"
+      [expandedSignal]="infoExpanded">
+      <div *ngIf="artwork()" class="artwork-info">
+          <!-- Title -->
+          <div class="artwork-title-section">
+            <h2 class="artwork-title">{{ artwork()?.title }}</h2>
+          </div>
+
+          <!-- Artist Info -->
+          <div class="artist-info">
+            <img 
+              [src]="artwork()?.authorProfileImage || 'assets/images/placeholder.svg'" 
+              [alt]="artwork()?.authorUsername"
+              class="artist-avatar">
+            <div class="artist-details">
+              <h4 class="artist-name">{{ artwork()?.authorUsername }}</h4>
+              <p class="artwork-date">{{ artwork()?.createdAt | date: 'short' }}</p>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="artwork-description">
+            <h3>Descripción</h3>
+            <p>{{ artwork()?.description || 'Sin descripción' }}</p>
+          </div>
+
+          <!-- Genres -->
+          <div *ngIf="artwork()?.genreNames && artwork()!.genreNames.length > 0" class="artwork-genres">
+            <h4>Géneros</h4>
+            <div class="genres-list">
+              <span *ngFor="let genre of artwork()?.genreNames" class="genre-tag">
+                {{ genre }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Like and Stats Section -->
+          <div class="artwork-stats-section">
+            <button 
+              class="btn-like-large" 
+              (click)="toggleLike()"
+              [disabled]="isLiking()"
+              [class.liked]="artwork()?.isLiked">
+              <i class="bi" [ngClass]="artwork()?.isLiked ? 'bi-heart-fill' : 'bi-heart'"></i>
+              <span>{{ artwork()?.isLiked ? 'Quitar favoritos' : 'Guardar favorito' }}</span>
+            </button>
+
+            <div class="stats">
+              <div class="stat-item">
+                <i class="bi bi-eye"></i>
+                <span>{{ artwork()?.viewCount || 0 }}</span>
+                <span class="stat-label">vistas</span>
+              </div>
+              <div class="stat-item">
+                <i class="bi bi-heart"></i>
+                <span>{{ artwork()?.likeCount || 0 }}</span>
+                <span class="stat-label">likes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <div *ngIf="isLoading()" class="loading">
+        <span>Cargando información...</span>
+      </div>
+    </app-collapsible-sidebar>
+
+    <!-- Center Section: Main Image -->
+    <div class="image-section">
+      <div *ngIf="isLoading()" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando obra...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && artwork()" class="image-wrapper">
+        <img 
+          [src]="artwork()?.imageUrl" 
+          [alt]="artwork()?.title"
+          class="artwork-image">
+      </div>
+
+      <div *ngIf="!isLoading() && !artwork()" class="error-message">
+        <i class="bi bi-exclamation-circle"></i>
+        <p>Error al cargar la obra</p>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Comments -->
+    <app-collapsible-sidebar 
+      position="right"
+      sidebarClass="comments-section"
+      [overlay]="true"
+      title="Comentarios"
+      icon="bi bi-chat-left-text"
+      [expandedSignal]="commentsExpanded">
+      <div *ngIf="artwork()" class="comments-container">
+          <!-- Add Comment Form -->
+          <div class="add-comment-form">
+            <textarea 
+              [value]="commentText()"
+              (input)="onCommentInput($event)"
+              placeholder="Escribe tu comentario..."
+              rows="3"
+              class="comment-input"
+              [disabled]="isAddingComment()"></textarea>
+            <button 
+              (click)="addComment()"
+              [disabled]="isAddingComment()"
+              class="btn btn-primary btn-send-comment">
+              {{ isAddingComment() ? 'Enviando...' : 'Enviar' }}
+            </button>
+          </div>
+
+          <!-- Comments List -->
+          <div class="comments-list">
+            <div *ngIf="artwork()?.comments && artwork()!.comments.length > 0; else noComments">
+              <div *ngFor="let comment of artwork()?.comments" class="comment-item">
+                <div class="comment-header">
+                  <img 
+                    [src]="comment.profileImage || 'assets/images/placeholder.svg'"
+                    [alt]="comment.username"
+                    class="comment-avatar">
+                  <div class="comment-info">
+                    <h5 class="comment-author">{{ comment.username }}</h5>
+                    <span class="comment-time">{{ comment.relativeTime }}</span>
+                  </div>
+                </div>
+                <p class="comment-text">{{ comment.content }}</p>
+                <button 
+                  *ngIf="currentUser()?.username === comment.username"
+                  (click)="deleteComment(comment.id)"
+                  class="btn-delete-comment"
+                  title="Eliminar comentario">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <ng-template #noComments>
+              <div class="no-comments">
+                <i class="bi bi-chat-dots"></i>
+                <p>No hay comentarios aún</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+
+      <div *ngIf="isLoading()" class="loading">
+        <span>Cargando comentarios...</span>
+      </div>
+    </app-collapsible-sidebar>
+  </div>
+</div>

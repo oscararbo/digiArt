@@ -1,18 +1,20 @@
+# region IMPORTS
 from django.urls import path
 from Artworks.views import (
     GenreSearchView,
     ArtworkCreateView,
     ArtworkListView,
     ArtworkDetailView,
-    ArtworkDeleteView,
+    ArtworkIncrementViewView,
     FeaturedArtworksView,
     RecentArtworksView,
     ArtworksByGenreView,
-    ToggleLikeView,
-    CheckLikeView,
-    GetArtworkLikesView
+    ToggleLikeView
 )
+from Artworks.views.comment_view import ArtworkCommentsView, ArtworkCommentDetailView
+# endregion
 
+# region URL PATTERNS
 urlpatterns = [
     # Genres
     path('genres/', GenreSearchView.as_view(), name='genre-search'),
@@ -21,7 +23,7 @@ urlpatterns = [
     path('artworks/create/', ArtworkCreateView.as_view(), name='artwork-create'),
     path('artworks/', ArtworkListView.as_view(), name='artwork-list'),
     path('artworks/<uuid:artwork_id>/', ArtworkDetailView.as_view(), name='artwork-detail'),
-    path('artworks/<uuid:artwork_id>/delete/', ArtworkDeleteView.as_view(), name='artwork-delete'),
+    path('artworks/<uuid:artwork_id>/view/', ArtworkIncrementViewView.as_view(), name='artwork-increment-view'),
     
     # Featured & recent
     path('artworks/featured/', FeaturedArtworksView.as_view(), name='featured-artworks'),
@@ -30,6 +32,9 @@ urlpatterns = [
     
     # Likes
     path('artworks/<uuid:artwork_id>/like/', ToggleLikeView.as_view(), name='toggle-like'),
-    path('artworks/<uuid:artwork_id>/check-like/', CheckLikeView.as_view(), name='check-like'),
-    path('artworks/<uuid:artwork_id>/likes/', GetArtworkLikesView.as_view(), name='get-likes'),
+    
+    # Comments
+    path('artworks/<uuid:artwork_id>/comments/', ArtworkCommentsView.as_view(), name='artwork-comments'),
+    path('artworks/<uuid:artwork_id>/comments/<uuid:comment_id>/', ArtworkCommentDetailView.as_view(), name='artwork-comment-detail'),
 ]
+# endregion

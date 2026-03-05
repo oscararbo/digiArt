@@ -17,6 +17,7 @@
       </div>
 
       <div class="modal-body">
+          <!-- User context -->
           <!-- Current user -->
           @if (currentUser) {
             <div class="alert alert-info mb-4">
@@ -24,6 +25,7 @@
             </div>
           }
 
+          <!-- Upload form -->
           <form [formGroup]="uploadForm" (ngSubmit)="submitArtwork()" enctype="multipart/form-data">
             
             <!-- Title -->
@@ -46,7 +48,7 @@
                   } @else if (uploadForm.get('title')?.hasError('minlength')) {
                     Mínimo 3 caracteres
                   } @else if (uploadForm.get('title')?.hasError('maxlength')) {
-                    Máximo 200 caracteres
+                    Máximo 80 caracteres
                   }
                 </div>
               }
@@ -98,7 +100,7 @@
               </div>
             </div>
 
-            <!-- Selected genres -->
+            <!-- Selected genres chips -->
             @if (selectedGenres.length > 0) {
               <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2">
@@ -116,7 +118,7 @@
               </div>
             }
 
-            <!-- Image upload -->
+            <!-- Image upload input -->
             <div class="mb-4">
               <label for="imagenInput" class="form-label fw-bold">Imagen de la Obra *</label>
               <div class="input-group">
@@ -148,6 +150,7 @@
       </div>
 
       <div class="modal-footer">
+        <!-- Modal actions -->
         <button 
           type="button" 
           class="btn btn-secondary" 

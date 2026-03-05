@@ -1,0 +1,35 @@
+<aside
+    [class]="sidebarClasses()"
+    [class.collapsed]="!isExpanded()">
+
+    <!-- Sidebar content -->
+    <div class="sidebar-content">
+        <div *ngIf="title" class="section-header">
+            <div class="section-title-wrapper">
+                <h3 class="section-title">
+                    <i *ngIf="icon" [class]="icon"></i> {{ title }}
+                </h3>
+            </div>
+        </div>
+
+        <!-- Projected content -->
+        <div class="section-content">
+            <ng-content></ng-content>
+        </div>
+
+        <div *ngIf="hasBottomActions" class="sidebar-bottom-actions">
+            <ng-content select="[bottom-actions]"></ng-content>
+        </div>
+    </div>
+
+    <!-- Collapse/expand action -->
+    <button
+        class="btn-collapse-sidebar"
+        (click)="toggle()"
+        [title]="isExpanded() ? 'Colapsar' : 'Expandir'"
+        [class.collapsed]="!isExpanded()">
+        <i class="bi"
+            [class.bi-chevron-left]="(position === 'left' && isExpanded()) || (position === 'right' && !isExpanded())"
+            [class.bi-chevron-right]="(position === 'left' && !isExpanded()) || (position === 'right' && isExpanded())"></i>
+    </button>
+</aside>

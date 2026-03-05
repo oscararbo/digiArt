@@ -1,18 +1,23 @@
 <div class="custom-container w-100 bg-light">
+  <!-- Left/Right Visual Panel -->
   <div class="logo-info position-relative" [ngClass]="typePageForm == 'login' ? 'order-0' : 'order-1'">
     <div class="bg-custom d-flex justify-content-center align-items-center h-100" [class.is-left]="typePageForm === 'login'">
       <img src="assets/images/loginPhoto.png" alt="Login Photo" class="h-75 w-75" style="object-fit: cover;">
     </div>
   </div>
+
+  <!-- Auth Form Panel -->
   <div class="form-content d-flex align-items-center justify-content-center" [ngClass]="typePageForm == 'login' ? 'order-1' : 'order-0'">
     <div class="form-div">
       @if (typePageForm === 'login') {
+        <!-- Login form component -->
         <app-login class="form-div"></app-login>
         <div class="text-center">
           <hr class="d-block w-75 mt-5 mb-4 m-auto">
           <span class="fw-bold">¿No tienes cuenta? </span><span class="clickText fw-bold" (click)="togglePageForm('register')">Registrate</span>
         </div>
       } @else {
+        <!-- Register form component -->
         <app-register class="form-div"></app-register>
         <div class="text-center">
           <hr class="d-block w-75 mt-5 mb-4 m-auto">
@@ -21,5 +26,4 @@
       }
     </div>
   </div>
-
 </div>

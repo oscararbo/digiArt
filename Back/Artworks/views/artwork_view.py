@@ -1,3 +1,4 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -8,8 +9,9 @@ from django.db.models import Count, Q
 
 from Artworks.models import Genre
 from Artworks.serializers import GenreSerializer
+# endregion
 
-
+# region GENRE VIEWS
 class GenreSearchView(APIView):
     """GET: Return genres, optionally filtered by search term."""
     permission_classes = [AllowAny]
@@ -30,8 +32,9 @@ class GenreSearchView(APIView):
             'count': len(serializer.data),
             'genres': serializer.data
         }, status=status.HTTP_200_OK)
+# endregion
 
-
+# region ARTWORK CRUD
 class ArtworkCreateView(APIView):
     """POST: Create a new artwork (auth required)."""
     permission_classes = [IsAuthenticated]
@@ -135,28 +138,21 @@ class ArtworkDetailView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
 
-class ArtworkDeleteView(APIView):
-    """DELETE: Remove an artwork (author only)."""
-    permission_classes = [IsAuthenticated]
+class ArtworkIncrementViewView(APIView):
+    """POST: Increment view count for an artwork."""
+    permission_classes = [AllowAny]
     
-    def delete(self, request, artwork_id):
+    def post(self, request, artwork_id):
         from Artworks.models import Artwork
         
         try:
             artwork = Artwork.objects.get(id=artwork_id)
-            
-            # Ensure the requester is the author
-            if artwork.author != request.user:
-                return Response({
-                    'success': False,
-                    'error': 'No tienes permiso para eliminar esta obra'
-                }, status=status.HTTP_403_FORBIDDEN)
-            
-            artwork.delete()
+            artwork.view_count += 1
+            artwork.save(update_fields=['view_count'])
             
             return Response({
                 'success': True,
-                'message': 'Obra eliminada exitosamente'
+                'views': artwork.view_count
             }, status=status.HTTP_200_OK)
             
         except Artwork.DoesNotExist:
@@ -164,8 +160,9 @@ class ArtworkDeleteView(APIView):
                 'success': False,
                 'error': 'Obra no encontrada'
             }, status=status.HTTP_404_NOT_FOUND)
+# endregion
 
-
+# region SPECIAL LISTING VIEWS
 class FeaturedArtworksView(APIView):
     """GET: Return featured artworks (most likes in last 7 days)."""
     permission_classes = [AllowAny]
@@ -240,4 +237,5 @@ class ArtworksByGenreView(APIView):
                 'success': False,
                 'error': 'Género no encontrado'
             }, status=status.HTTP_404_NOT_FOUND)
+# endregion
 

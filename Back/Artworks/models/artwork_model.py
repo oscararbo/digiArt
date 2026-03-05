@@ -1,8 +1,10 @@
+# region IMPORTS
 from django.db import models
 from django.conf import settings
 import uuid
+# endregion
 
-
+# region ARTWORK MODEL
 class Artwork(models.Model):
     """Artwork uploaded by a user."""
     
@@ -39,6 +41,7 @@ class Artwork(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
     updated_at = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
     
+    # region META AND METHODS
     class Meta:
         db_table = 'artworks'
         ordering = ['-created_at']
@@ -50,3 +53,5 @@ class Artwork(models.Model):
     
     def get_genres_count(self):
         return self.genres.count()
+    # endregion
+# endregion

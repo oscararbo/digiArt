@@ -1,7 +1,9 @@
+# region IMPORTS
 from rest_framework import serializers
 from Users.models import CustomUser
+# endregion
 
-
+# region REGISTER SERIALIZER
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, allow_blank=False, allow_null=False, max_length=100)
     username = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=50)
@@ -12,6 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('email', 'username', 'password', 'password_confirm')
 
+    # region VALIDATION METHODS
     def validate_email(self, email):
         if "@" not in email:
             raise serializers.ValidationError("El email no es válido")
@@ -46,7 +49,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Las contraseñas no coinciden")
 
         return attrs
+    # endregion
 
+    # region CREATE METHOD
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
@@ -56,3 +61,5 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+    # endregion
+# endregion

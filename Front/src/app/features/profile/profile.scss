@@ -44,35 +44,6 @@ $error-color: #ff6b6b;
     }
 }
 
-.btn-back {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-    transition: all 0.3s ease;
-    z-index: 999;
-
-    &:hover {
-        background: var(--primary-gradient);
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    i {
-        font-size: 20px;
-    }
-}
-
 // Sidebar - User Profile Info
 .profile-sidebar {
     width: 33.33%;
@@ -121,7 +92,7 @@ $error-color: #ff6b6b;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto;
     border: 3px solid white;
     overflow: hidden;
 
@@ -159,10 +130,13 @@ $error-color: #ff6b6b;
 
 .sidebar-bottom-actions {
     display: flex;
-    gap: 10px;
+    gap: 3%;
     margin-top: auto;
-    padding-top: 20px;
+    padding: 4% 0;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .btn-action {
@@ -170,7 +144,7 @@ $error-color: #ff6b6b;
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    padding: 12px;
+    padding: 4% 3%;
     border-radius: 12px;
     font-size: 18px;
     cursor: pointer;
@@ -178,7 +152,7 @@ $error-color: #ff6b6b;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 2%;
     font-weight: 600;
 
     i {
@@ -469,25 +443,6 @@ $error-color: #ff6b6b;
     app-art-card {
         flex: 1;
     }
-
-    .artwork-stats {
-        display: flex;
-        gap: 10px;
-        padding: 10px 0;
-        margin-top: 8px;
-
-        .stat {
-            font-size: 13px;
-            color: $text-light;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            i {
-                color: $primary-color;
-            }
-        }
-    }
 }
 
 .no-artworks {
@@ -512,10 +467,6 @@ $error-color: #ff6b6b;
 @media (max-width: 1024px) {
     .profile-sidebar {
         width: 40%;
-
-        .btn-back {
-            display: none;
-        }
     }
 
     .profile-main {
@@ -546,17 +497,19 @@ $error-color: #ff6b6b;
         padding-top: 70px;
 
         &.collapsed {
-            display: none;
-        }
-    }
+            display: flex;
+            width: 100%;
+            height: 64px;
+            min-height: 64px;
+            padding: 0 20px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 
-    .btn-back {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        width: 35px;
-        height: 35px;
-        font-size: 18px;
+            .btn-collapse-sidebar {
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+            }
+        }
     }
 
     .sidebar-bottom-actions {

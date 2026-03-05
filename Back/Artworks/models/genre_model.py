@@ -1,6 +1,8 @@
+# region IMPORTS
 from django.db import models
+# endregion
 
-
+# region GENRE MODEL
 class Genre(models.Model):
     """Genre available for artworks."""
     
@@ -10,6 +12,7 @@ class Genre(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, db_column='fecha_creacion')
     
+    # region META AND METHODS
     class Meta:
         db_table = 'genres'
         ordering = ['name']
@@ -18,3 +21,5 @@ class Genre(models.Model):
     
     def __str__(self):
         return self.name
+    # endregion
+# endregion

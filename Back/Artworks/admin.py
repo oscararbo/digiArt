@@ -1,5 +1,5 @@
 from django.contrib import admin
-from Artworks.models import Genre, Artwork, Like
+from Artworks.models import Genre, Artwork, Like, Comment
 
 
 @admin.register(Genre)
@@ -37,3 +37,22 @@ class LikeAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('user__username', 'artwork__title')
     readonly_fields = ('created_at',)
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('author', 'artwork', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('author__username', 'artwork__title', 'content')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Comment Info', {
+            'fields': ('id', 'artwork', 'author', 'content')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+

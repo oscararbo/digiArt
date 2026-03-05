@@ -50,7 +50,7 @@ export class ArtCard implements OnInit {
     try {
       this.artworkSignal = this.userService.getArtworkSignal(String(id), this.data);
     } catch (e) {
-      this.notificationService.showError('Error al cargar los datos de la obra. Por favor recarga la página.');
+      this.notificationService.showError('Error al cargar los datos de la obra. Por favor recarga la pÃ¡gina.');
       return;
     }
 
@@ -69,7 +69,6 @@ export class ArtCard implements OnInit {
     this.liked = !!this.data?.liked;
     // set idSignal so the effect will wire the per-artwork signal
     this.idSignal.set(this.data?.id ?? null);
-    // Get current user ID from localStorage
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
@@ -81,47 +80,38 @@ export class ArtCard implements OnInit {
     }
   }
 
+// #region NAVIGATION
+
   /**
    * Navigate to the detail page of the artwork when the card is clicked.
-   * This function is called when the user clicks on the art card, allowing them to view more details about the artwork on a separate page.
-   * @returns 
    */
   goToDetail() {
     const id = this.data?.id;
     if (!id) return;
-    // navigate to art-detail with id
-    this.router.navigate(['/art-detail', id]);
+    this.router.navigate(['/art', id]);
   }
 
+// #endregion
+// #region LIKE FUNCTIONALITY
+
   /** Handle the like/unlike action for the artwork.
-   * This function is called when the user clicks on the like button on the art card, allowing them to like or unlike the artwork and updating the like status accordingly.
-   * @param event 
-   * @returns 
    */
-  //TODO: Hecho por chati, cambiar en algun momento
   async toggleFavorite(event: Event) {
     event.stopPropagation();
-    
-    // Check authentication before proceeding
+
     if (!this.authGuard.checkAuthentication()) {
       return;
     }
 
-    // Use current user ID from localStorage if userId not provided
     const userId = this.userId || this.currentUserId;
-    
     if (!userId) {
-      // Open shared login popup instead of alert
       try { this.loginPopup.open(); } catch (e) { }
       return;
     }
 
-    // Do not change `liked` optimistically to avoid change-detection errors.
-    // Show loading state while request completes.
     this.loadingFav = true;
 
     try {
-      // Ensure we have a token; if not, open login popup
       const token = localStorage.getItem('access_token');
       if (!token) {
         try { this.loginPopup.open(); } catch (e) { }
@@ -129,11 +119,9 @@ export class ArtCard implements OnInit {
         return;
       }
 
-      // Determine current liked state from shared signal/list to avoid stale local `this.liked`
       const currentlyLiked = !!this.userService.userLikedArtworks().find((a: any) => String(a.id) === String(this.data.id));
       const action = currentlyLiked ? 'remove' : 'add';
 
-      // Use HttpClient with explicit Authorization header
       let res: any;
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
@@ -151,18 +139,16 @@ export class ArtCard implements OnInit {
         this.notificationService.showError('Error al actualizar favorito. Por favor intenta de nuevo.');
         throw httpErr;
       }
-      // Compute new liked state from server response
+
       const nowLiked = res.action === 'add' || res.action === 'liked' || (res.success && (res.action === undefined) ? (res.likes > 0) : false);
       const updated = { ...(this.data as any), likeCount: res.likes ?? this.data.likeCount, liked: !!nowLiked };
 
-      // First, update the per-artwork/global signals so all card instances reflect the new artwork state immediately
       try {
         this.userService.updateArtworkGlobally(updated);
       } catch (e) {
         this.notificationService.showError('Error al actualizar la obra. Por favor intenta de nuevo.');
       }
 
-      // Then update the user's liked list (add or remove)
       try {
         if (updated.liked) {
           this.userService.userLikedArtworks.update(list => {
@@ -176,10 +162,8 @@ export class ArtCard implements OnInit {
         this.notificationService.showError('Error al actualizar favoritos. Por favor intenta de nuevo.');
       }
 
-      // Update local fields and stabilize view
       this.data = updated;
       this.liked = !!updated.liked;
-      // stabilize view after applying server-driven changes
       try { this.cd.detectChanges(); } catch (e) {}
     } catch (err) {
       this.notificationService.showError('Error al actualizar favorito. Por favor intenta de nuevo.');
@@ -187,4 +171,5 @@ export class ArtCard implements OnInit {
       this.loadingFav = false;
     }
   }
+// #endregion
 }

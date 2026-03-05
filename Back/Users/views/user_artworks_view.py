@@ -1,3 +1,4 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -5,8 +6,9 @@ from rest_framework.views import APIView
 from Users.models import CustomUser
 from Artworks.models import Artwork
 from Artworks.serializers import ArtworkSerializer
+# endregion
 
-
+# region USER ARTWORKS VIEW
 class UserArtworksView(APIView):
     """Get artworks uploaded by a user."""
     permission_classes = [AllowAny]
@@ -34,3 +36,4 @@ class UserArtworksView(APIView):
                 'success': False,
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# endregion

@@ -1,7 +1,9 @@
+# region IMPORTS
 from rest_framework import serializers
 from Users.models import CustomUser
+# endregion
 
-
+# region USER PROFILE SERIALIZER
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
     
@@ -20,8 +22,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.profile_image.url)
             return f'http://127.0.0.1:8000{obj.profile_image.url}'
         return None
+# endregion
 
-
+# region USER PROFILE UPDATE SERIALIZER
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -32,3 +35,4 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if CustomUser.objects.filter(username=value).exclude(id=user.id).exists():
             raise serializers.ValidationError("Este nombre de usuario ya está en uso")
         return value
+# endregion

@@ -1,8 +1,10 @@
 <div class="art-card" (click)="goToDetail()" role="button" tabindex="0">
+    <!-- Artwork image -->
     <div class="art-image-wrap">
-        <img [src]="data?.imageUrl || 'assets/images/placeholder.png'" alt="{{data?.title || 'Artwork'}}">
+        <img [src]="data?.imageUrl || 'assets/images/placeholder.svg'" alt="{{data?.title || 'Artwork'}}">
     </div>
 
+    <!-- Card body -->
     <div class="art-body">
         <div class="art-meta">
             <div class="art-texts">
@@ -10,6 +12,7 @@
                 <div class="art-author" title="{{data?.author}}">{{ data?.author }}</div>
             </div>
 
+            <!-- Like action -->
             <button class="btn-like" (click)="toggleFavorite($event)" aria-label="favorite">
                 <i class="bi" [ngClass]="[liked ? 'bi-heart-fill' : ' bi-heart']"></i>
             </button>

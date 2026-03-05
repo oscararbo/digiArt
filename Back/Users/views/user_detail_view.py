@@ -1,11 +1,13 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from Users.models import CustomUser
 from Users.serializers import UserProfileSerializer
+# endregion
 
-
+# region USER DETAIL VIEW
 class UserDetailView(APIView):
     """Get a user profile by username."""
     permission_classes = [AllowAny]
@@ -28,3 +30,4 @@ class UserDetailView(APIView):
                 'success': False,
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# endregion

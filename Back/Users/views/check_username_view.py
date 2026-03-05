@@ -1,11 +1,13 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Users.models import CustomUser
+# endregion
 
-
+# region CHECK USERNAME VIEW
 class CheckUsernameView(APIView):
     """GET: Check whether a username is available."""
     permission_classes = [AllowAny]
@@ -33,3 +35,4 @@ class CheckUsernameView(APIView):
             'username': username,
             'available': is_available
         }, status=status.HTTP_200_OK)
+# endregion

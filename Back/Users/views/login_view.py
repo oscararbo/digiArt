@@ -1,11 +1,13 @@
+# region IMPORTS
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Users.serializers import LoginSerializer
+# endregion
 
-
+# region LOGIN VIEW
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -34,3 +36,4 @@ class LoginView(APIView):
                 'success': False,
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
+# endregion
