@@ -89,7 +89,7 @@ export class Login implements OnInit {
 
       if (!response.ok) {
         // Extract error message from backend response
-        let errorMsg = 'Credenciales invÃ¡lidas';
+        let errorMsg = 'Credenciales inválidas';
         
         // Try non_field_errors first (general errors)
         if (data?.errors?.non_field_errors?.length > 0) {
@@ -117,13 +117,13 @@ export class Login implements OnInit {
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Iniciar renovaciÃ³n automÃ¡tica del token
+      // Iniciar renovación automática del token
       this.tokenRefreshService.startAutoRefresh();
       
       this.router.navigate(['/home']);
     } catch (error) {
-      this.notificationService.showError('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
-      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
+      this.notificationService.showError('Error de conexión. Verifica que el servidor esta corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esta corriendo en http://127.0.0.1:8000');
     } finally {
       this.cargando = false;
     }

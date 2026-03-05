@@ -50,7 +50,7 @@ export class ArtCard implements OnInit {
     try {
       this.artworkSignal = this.userService.getArtworkSignal(String(id), this.data);
     } catch (e) {
-      this.notificationService.showError('Error al cargar los datos de la obra. Por favor recarga la pÃ¡gina.');
+      this.notificationService.showError('Error al cargar los datos de la obra. Por favor recarga la página.');
       return;
     }
 

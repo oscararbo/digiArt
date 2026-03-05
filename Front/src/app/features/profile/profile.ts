@@ -235,7 +235,7 @@ export class Profile implements OnInit {
         }
         const trimmedUsername = this.editingUsername().trim();
         if (trimmedUsername.length === 0) {
-            this.profileMessage.set('Por favor selecciona un nombre de usuario vÃ¡lido');
+            this.profileMessage.set('Por favor selecciona un nombre de usuario válido');
             return;
         }
 

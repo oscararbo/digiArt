@@ -130,7 +130,7 @@ export class ArtDetail implements OnInit, OnDestroy {
       });
 
       this.notificationService.showSuccess(
-        result.isLiked ? 'Obra aÃ±adida a favoritos' : 'Obra removida de favoritos'
+        result.isLiked ? 'Obra añadida a favoritos' : 'Obra removida de favoritos'
       );
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -157,7 +157,7 @@ export class ArtDetail implements OnInit, OnDestroy {
   async addComment() {
     const text = this.commentText().trim();
     if (!text) {
-      this.notificationService.showError('El comentario no puede estar vacÃ­o');
+      this.notificationService.showError('El comentario no puede estar vací­o');
       return;
     }
 
@@ -174,10 +174,10 @@ export class ArtDetail implements OnInit, OnDestroy {
       });
 
       this.commentText.set('');
-      this.notificationService.showSuccess('Comentario aÃ±adido correctamente');
+      this.notificationService.showSuccess('Comentario añadido correctamente');
     } catch (error) {
       console.error('Error adding comment:', error);
-      this.notificationService.showError('Error al aÃ±adir el comentario. Por favor intenta de nuevo.');
+      this.notificationService.showError('Error al añadir el comentario. Por favor intenta de nuevo.');
     } finally {
       this.isAddingComment.set(false);
     }
@@ -187,7 +187,7 @@ export class ArtDetail implements OnInit, OnDestroy {
    * Delete a comment
    */
   async deleteComment(commentId: string) {
-    if (!confirm('Â¿EstÃ¡s seguro de que deseas eliminar este comentario?')) {
+    if (!confirm('Â¿Estás seguro de que deseas eliminar este comentario?')) {
       return;
     }
 

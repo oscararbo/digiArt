@@ -110,7 +110,7 @@ export class TokenRefreshService {
             this.isRefreshing = false;
             return false;
         } catch (error) {
-            this.notificationService.showError('Error al renovar la sesiÃ³n. Por favor inicia sesiÃ³n de nuevo.');
+            this.notificationService.showError('Error al renovar la sesión. Por favor inicia sesión de nuevo.');
             this.clearSession();
             this.isRefreshing = false;
             return false;

@@ -128,7 +128,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
                 genresSignal.set(visualGenres);
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar los gÃ©neros. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar los géneros. Por favor intenta de nuevo.');
         }
     }
 
@@ -138,7 +138,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
      * @returns 
      */
     filterVisualGenres(genres: any[]): any[] {
-        const visualGenres = ['Pintura', 'FotografÃ­a', 'IlustraciÃ³n', 'DiseÃ±o GrÃ¡fico', 'Arte Digital', 'Grabado', 'CerÃ¡mica', 'Escultura', 'Arquitectura'];
+        const visualGenres = ['Pintura', 'Fotografí­a', 'Ilustración', 'Diseño Gráfico', 'Arte Digital', 'Grabado', 'Cerámica', 'Escultura', 'Arquitectura'];
         return genres.filter((genre) => visualGenres.includes(genre.name));
     }
 
@@ -222,7 +222,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
         // Validate extension
         const ext = file.name.split('.').pop()?.toLowerCase();
         if (!ext || !this.allowedExtensions.includes(ext)) {
-            this.notificationService.showError(`ExtensiÃ³n no permitida. Usa: ${this.allowedExtensions.join(', ')}`);
+            this.notificationService.showError(`Extensión no permitida. Usa: ${this.allowedExtensions.join(', ')}`);
             return;
         }
 
@@ -271,7 +271,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
         }
 
         if (this.selectedGenres.length === 0) {
-            this.notificationService.showError('Selecciona al menos un gÃ©nero');
+            this.notificationService.showError('Selecciona al menos un género');
             return;
         }
 
@@ -333,7 +333,7 @@ export class UploadArtForm implements OnInit, OnDestroy {
             this.closeModal();
             
         } catch (error) {
-            this.notificationService.showError('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
+            this.notificationService.showError('Error de conexión. Verifica que el servidor esté corriendo en http://127.0.0.1:8000');
         } finally {
             this.isLoading = false;
         }

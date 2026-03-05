@@ -127,7 +127,7 @@ export class Register {
     }
 
     if (this.isEmailAvailable === null) {
-      this.errorMessage.set('Por favor, espera a que se verifique el correo electrÃ³nico');
+      this.errorMessage.set('Por favor, espera a que se verifique el correo electrónico');
       return;
     }
 
@@ -145,7 +145,7 @@ export class Register {
     }
 
     if (this.registerForm.value.password !== this.registerForm.value.passwordConfirm) {
-      this.errorMessage.set('Las contraseÃ±as no coinciden');
+      this.errorMessage.set('Las contraseñas no coinciden');
       return;
     }
 
@@ -184,7 +184,7 @@ export class Register {
       // Login after successful registration using the original credentials
       await this.loginAfterRegister(this.registerForm.value.email, this.registerForm.value.password);
     } catch (error) {
-      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esta corriendo en http://127.0.0.1:8000');
     } finally {
       this.isLoading = false;
     }
@@ -220,13 +220,13 @@ export class Register {
       localStorage.setItem('refresh_token', data.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Iniciar renovaciÃ³n automÃ¡tica del token
+      // Iniciar renovación automática del token
       this.tokenRefreshService.startAutoRefresh();
 
       // Navigate to home page after successful login
       this.router.navigate(['/home']);
     } catch (error) {
-      this.errorMessage.set('Error de conexiÃ³n. Verifica que el servidor estÃ© corriendo en http://127.0.0.1:8000');
+      this.errorMessage.set('Error de conexión. Verifica que el servidor esta corriendo en http://127.0.0.1:8000');
     }
   }
 // #endregion

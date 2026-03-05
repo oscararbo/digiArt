@@ -20,10 +20,10 @@ export function emailValidator(): ValidatorFn {
 }
 
 /**
- * Valida que la contraseÃ±a contenga:
- * - Al menos 1 mayÃºscula
- * - Al menos 1 minÃºscula
- * - Al menos 1 nÃºmero
+ * Valida que la contraseña contenga:
+ * - Al menos 1 mayúscula
+ * - Al menos 1 minúscula
+ * - Al menos 1 número
  */
 export function passwordValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {

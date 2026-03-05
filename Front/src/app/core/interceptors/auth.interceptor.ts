@@ -59,7 +59,7 @@ export class AuthInterceptor implements HttpInterceptor {
                     localStorage.removeItem('refresh_token');
                     localStorage.removeItem('user');
                     window.location.href = '/auth/login';
-                    observer.error(new Error('SesiÃ³n expirada'));
+                    observer.error(new Error('Sesión expirada'));
                 }
             });
         });

@@ -120,7 +120,7 @@ export class Home implements OnInit {
                         }));
                     } catch (e) {}
                 } catch (err) {
-                    this.notificationService.showError('Error al actualizar obras. Por favor recarga la pÃ¡gina.');
+                    this.notificationService.showError('Error al actualizar obras. Por favor recarga la página.');
                 }
             }
         });
@@ -183,7 +183,7 @@ export class Home implements OnInit {
                 this.allGenres.set(filtered);
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar los gÃ©neros. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar los géneros. Por favor intenta de nuevo.');
         }
     }
 
@@ -305,7 +305,7 @@ export class Home implements OnInit {
                 };
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar artworks del gÃ©nero. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar artworks del género. Por favor intenta de nuevo.');
         }
         return null;
     }
@@ -332,7 +332,7 @@ export class Home implements OnInit {
 
     /**
      * Open a modal to display a paginated list of artworks for a specific section (featured, recent, or genre). 
-     * This function is called when the user clicks on the "Ver mÃ¡s" button for a section on the home page, allowing them to see more artworks related to that section.
+     * This function is called when the user clicks on the "Ver más" button for a section on the home page, allowing them to see more artworks related to that section.
      * @param section
      * @returns 
      */
@@ -363,7 +363,7 @@ export class Home implements OnInit {
                 this.isModalOpen = true;
             }
         } catch (error) {
-            this.notificationService.showError('Error al cargar mÃ¡s artworks. Por favor intenta de nuevo.');
+            this.notificationService.showError('Error al cargar más artworks. Por favor intenta de nuevo.');
         }
     }
 
